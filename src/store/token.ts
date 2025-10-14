@@ -6,6 +6,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue' // 修复：导入 computed
 import {
   login as _login,
+  loginByPhone as _loginByPhone,
   logout as _logout,
   refreshToken as _refreshToken,
   register as _register,
@@ -96,6 +97,7 @@ export const useTokenStore = defineStore(
       await userStore.fetchUserInfo()
     }
 
+    // 用户注册
     const register = async (registerForm: ILoginForm) => {
       try {
         // 获取token
@@ -123,6 +125,26 @@ export const useTokenStore = defineStore(
       try {
         // 获取token
         const res = await _login(loginForm)
+        console.log('普通登录-res: ', res)
+        if (res) {
+          // 获取用户信息
+          await _toGetUserInfo(res)
+          // 登录成功的提示由调用方处理，避免重复提示
+        }
+
+        return res
+      }
+      catch (error) {
+        console.error('普通登录失败:', error)
+        // 错误由调用方处理，避免重复提示
+        throw error
+      }
+    }
+
+    const loginByPhone = async (loginForm: ILoginForm) => {
+      try {
+        // 获取token
+        const res = await _loginByPhone(loginForm)
         console.log('普通登录-res: ', res)
         if (res) {
           // 获取用户信息
@@ -249,11 +271,12 @@ export const useTokenStore = defineStore(
         return false
       }
       if (isDoubleTokenMode) {
-        console.log('是否为双Token响应', isDoubleTokenRes(tokenInfo.value), !!tokenInfo.value.access_token)
+        // 变成布尔值 的语法糖
+        console.log('是否为双Token响应', isDoubleTokenRes(tokenInfo.value), !!tokenInfo.value)
         return isDoubleTokenRes(tokenInfo.value) && !!tokenInfo.value.access_token
       }
       else {
-        console.log('是否为单Token响应', isSingleTokenRes(tokenInfo.value), !!tokenInfo.value.token)
+        console.log('是否为单Token响应', isSingleTokenRes(tokenInfo.value), !!tokenInfo.value)
         return isSingleTokenRes(tokenInfo.value) && !!tokenInfo.value.token
       }
     })
@@ -287,6 +310,7 @@ export const useTokenStore = defineStore(
     return {
       // 核心API方法
       login,
+      loginByPhone,
       register,
       wxLogin,
       logout,

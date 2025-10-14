@@ -41,10 +41,24 @@ const httpInterceptor = {
     // 1. 请求超时
     options.timeout = 60000 // 60s
     // 2. （可选）添加小程序端请求头标识
+    // 注意：uploadFile 不能写死 Content-Type，需让运行时自动设置 multipart/form-data
+    const isUpload = 'filePath' in options && 'name' in options
     options.header = {
       ...options.header,
-      'Content-Type': 'application/json; charset=utf-8',
       platform, // 可选，与 uniapp 定义的平台一致，告诉后台来源
+    }
+    // 普通 request 默认 JSON Content-Type；uploadFile 不设置
+    if (!isUpload) {
+      // 仅当未手动设置时追加，避免覆盖调用方自定义
+      if (!options.header['Content-Type']) {
+        options.header['Content-Type'] = 'application/json; charset=utf-8'
+      }
+    }
+    else {
+      // 若上游误写了 JSON Content-Type，移除以便 uni.uploadFile 自动加 boundary
+      if (options.header['Content-Type']) {
+        delete options.header['Content-Type']
+      }
     }
     // 3. 添加 token 请求头标识
     const tokenStore = useTokenStore()

@@ -122,7 +122,6 @@ import { checkFavorite, FavoriteType, toggleFavorite as toggleFavoriteApi } from
 import CommentSystem from '@/components/CommentSystem.vue'
 import { useTokenStore } from '@/store/token'
 import { useUserStore } from '@/store/user'
-import { processContent } from '@/utils/simpleMarkdown'
 
 // 扩展 Article 类型以包含点赞数
 interface ExtendedArticle extends Article {
@@ -166,7 +165,7 @@ const currentUser = computed(() => {
 const processedContent = computed(() => {
   if (!article.value?.content)
     return ''
-  return processContent(article.value.content)
+  return article.value.content
 })
 
 // 格式化日期

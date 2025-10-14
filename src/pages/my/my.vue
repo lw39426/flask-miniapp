@@ -1,8 +1,11 @@
 <template>
   <view class="profile-page">
-    <!-- 顶部展示图 -->
+    <!-- 顶部背景封面图 -->
     <view class="top-show">
-      <image mode="widthFix" class="top-show-img" src="/static/images/boy.jpg" />
+      <image mode="widthFix" class="top-show-img" :src="coverSrc" @tap="changeCover" @error="onCoverError" />
+      <view v-if="hasLogin" class="cover-edit-btn" @tap="changeCover">
+        更换封面
+      </view>
     </view>
     <!--  登录面板——用户信息头部 -->
     <view class="profile-header">
@@ -92,23 +95,11 @@
       </view>
 
       <!-- 关于售前售后服务面板 -->
-      <view class="after-scale section">
+      <!-- <view class="after-scale section">
         <view class="order-title-wrap">
           <text class="title">关于服务</text>
         </view>
-        <view class="after-scale-item">
-          <view class="iconfont icon-kefufenxiermaikefu" />
-          <text>可电话咨询联系我们</text>
-        </view>
-        <view class="after-scale-item">
-          <view class="iconfont icon-shijian" />
-          <text>小程序客服工作时间为: 9:30 ~ 17:30</text>
-        </view>
-        <view class="after-scale-item">
-          <view class="iconfont icon-zhangben" />
-          <text>鲜花可以提前7-15天预订重大节假日不支持定时配送</text>
-        </view>
-      </view>
+      </view> -->
 
       <!-- 底部面板 -->
       <view class="info-footer">
@@ -144,6 +135,89 @@ const hasLogin = computed(() => tokenStore.hasLogin)
 
 // 用户信息
 const userInfo = computed(() => userStore.userInfo)
+
+const DEFAULT_COVER = '/static/images/boy.jpg'
+const coverUrl = ref<string>('')
+
+// 顶部封面图显示：优先本地更新的 coverUrl，其次用户信息中的 bg_cover，最后默认图
+const coverSrc = computed(() => {
+  return userInfo.value?.bg_cover || coverUrl.value || DEFAULT_COVER
+})
+
+// 图片加载失败时回退默认图
+const onCoverError = () => {
+  coverUrl.value = DEFAULT_COVER
+}
+
+// 更换封面：选择图片并上传到后端
+const changeCover = () => {
+  if (!hasLogin.value) {
+    uni.showModal({
+      title: '提示',
+      content: '请先登录后再更换封面',
+      confirmText: '去登录',
+      success: (res) => {
+        if (res.confirm) {
+          uni.navigateTo({ url: LOGIN_PAGE })
+        }
+      }
+    })
+    return
+  }
+
+  uni.chooseImage({
+    count: 1,
+    sizeType: ['compressed'],
+    sourceType: ['album', 'camera'],
+    success: (res) => {
+      const tempFilePath = res.tempFilePaths[0]
+      if (!tempFilePath) {
+        uni.showToast({ title: '请选择图片', icon: 'none' })
+        return
+      }
+      uni.showLoading({ title: '上传中...' })
+      const baseURL = import.meta.env.VITE_SERVER_BASEURL
+      uni.uploadFile({
+        url: `${baseURL}/miniapp/user/bgCover`,
+        filePath: tempFilePath,
+        name: 'file',
+        header: {
+          Authorization: `Bearer ${(tokenStore.tokenInfo as any).access_token
+          || (tokenStore.tokenInfo as any).token}`
+        },
+        success: (uploadRes) => {
+          try {
+            const parsed = JSON.parse(uploadRes.data || '{}')
+            if (parsed.code === 200 && parsed.data?.bg_cover) {
+              const fullUrl = parsed.data.bg_cover.startsWith('http')
+                ? parsed.data.bg_cover
+                : `${baseURL}${parsed.data.bg_cover}`
+              coverUrl.value = fullUrl
+              // 更新用户信息
+              if (userStore.userInfo) {
+                userStore.userInfo.bg_cover = fullUrl
+                userStore.updateUserInfo({ ...userStore.userInfo, bg_cover: fullUrl })
+              }
+              uni.showToast({ title: '封面已更新', icon: 'success' })
+            }
+            else {
+              uni.showToast({ title: parsed.message || '上传失败', icon: 'none' })
+            }
+          }
+          catch {
+            uni.showToast({ title: '解析响应失败', icon: 'none' })
+          }
+        },
+        fail: () => {
+          uni.showToast({ title: '上传失败', icon: 'none' })
+        },
+        complete: () => {
+          uni.hideLoading()
+        }
+      })
+    }
+  })
+}
 
 // 头像上传
 const src = ref<string>('') // 文件临时地址
@@ -583,6 +657,8 @@ const handlePageFocus = () => {
 
 // 页面加载时执行 - 只执行一次初始化
 onMounted(() => {
+  // 初始化封面为当前用户的 bg_cover
+  coverUrl.value = userInfo.value?.bg_cover || ''
   // 添加退出登录菜单
   addLogoutMenuItem()
 
@@ -614,12 +690,26 @@ onUnmounted(() => {
 
 /* 顶部展示图片 */
 .top-show {
+  background: linear-gradient(164deg, #a7ffec 0%, #ff558a 100%);
   width: 100%;
-  height: 180rpx !important;
+  height: 340rpx !important;
+  overflow: hidden;
+  position: relative;
 
   .top-show-img {
     width: 100%;
     height: 100%;
+  }
+
+  .cover-edit-btn {
+    position: absolute;
+    right: 24rpx;
+    bottom: 24rpx;
+    padding: 8rpx 16rpx;
+    background: rgba(0, 0, 0, 0.4);
+    color: #fff;
+    border-radius: 20rpx;
+    font-size: 24rpx;
   }
 }
 
@@ -636,7 +726,8 @@ onUnmounted(() => {
     color: #000000;
     background-color: #fdfdfd;
     border-radius: 20rpx;
-    margin: 120rpx 30rpx 0;
+    margin: -72rpx 30rpx 0;
+    // -72rpx
     padding: 20rpx;
 
     .avatar {

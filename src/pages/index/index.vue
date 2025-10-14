@@ -213,6 +213,7 @@ const loadHomeData = async () => {
     }))
   }
   catch (e: any) {
+    // 演示时使用----
     banners.value = [{
       id: null,
       title: '汤姆猫',
@@ -223,10 +224,10 @@ const loadHomeData = async () => {
     }]
     articles.value = [
       {
-        author: '\u54F2\u5F1F',
+        author: '刘德华',
         category_name: '\u52A8\u6F2B\u5C0F\u8BF4',
         content: '',
-        description: '\u52A8\u753B\u300A\u72D0\u5996\u5C0F\u7EA2\u5A18\u300B\u6539\u7F16\u81EA\u5C0F\u65B0\u521B\u4F5C\u7684\u540C\u540D\u6F2B\u753B\u4F5C\u54C1 [1]\u3002\u4F5C\u54C1\u4E3B\u8981\u8BB2\u8FF0\u4E86\u4EE5\u7EA2\u5A18\u4E3A\u804C\u4E1A\u7684\u72D0\u5996\u5728\u4E3A\u524D\u4E16\u604B\u4EBA\u7275\u7EA2\u7EBF\u8FC7\u7A0B\u5F53\u4E2D\u53D1\u751F\u7684\u4E00\u7CFB\u5217\u6709\u8DA3\u3001\u795E\u79D8\u7684\u6545\u4E8B',
+        description: '动画《狐妖小红娘》改编自小新创作的同名漫画作品 [1]。作品主要讲述了以红娘为职业的狐妖在为前世恋人牵红线过程当中发生的一系列有趣、神秘的故事',
         id: 23,
         image: 'https://pic.kts.g.mi.com/0b6f8c016b82e699588fe5a61f8685f99080080050210315033.png',
         published_date: '2025-09-15 22:26:16',
@@ -237,14 +238,14 @@ const loadHomeData = async () => {
             name: '\u70ED\u95E8\u63A8\u8350'
           }
         ],
-        title: '\u300A\u72D0\u5996\u5C0F\u7EA2\u5A18\u300B',
+        title: '《狐妖小红娘》',
         views: 1505
       },
       {
-        author: '\u54F2\u5F1F',
+        author: '周佳哲',
         category_name: '\u52A8\u6F2B\u5C0F\u8BF4',
         content: '',
-        description: '\u51E1\u4EBA\u4FEE\u4ED9\u4F20\u300B\u662F\u5FD8\u8BED\u81EA2008\u5E742\u670820\u65E5\u8D77\u5728\u8D77\u70B9\u4E2D\u6587\u7F51\u4E0A\u8FDE\u8F7D\u7684\u7F51\u7EDC\u5C0F\u8BF4\u4F5C\u54C1\u3002\u8BE5\u4F5C\u54C1\u662F\u201C\u51E1\u4EBA\u6D41\u201D\u7F51\u6587\u7684\u4EE3\u8868\u4F5C\u30022010\u5E741\u6708\uFF0C\u8BE5\u4F5C\u5355\u884C\u672C\u7531\u592A\u767D\u6587\u827A\u51FA\u7248\u793E\u51FA\u7248\u30022020\u5E747\u6708\uFF0C\u4F5C\u54C1\u4EA6\u6539\u7F16\u6210\u540C\u540D\u52A8\u753B\u3002',
+        description: '动画《狐妖小红娘》改编自小新创作的同名漫画作品 [1]。作品主要讲述了以红娘为职业的狐妖在为前世恋人牵红线过程当中发生的一系列有趣、神秘的故事',
         id: 22,
         image: 'https://ts4.tc.mm.bing.net/th/id/OIP-C.OmmRhieRFO_ehJsGyy2IMgHaEJ?rs=1&pid=ImgDetMain&o=7&rm=3',
         published_date: '2025-09-15 22:15:20',
@@ -255,10 +256,11 @@ const loadHomeData = async () => {
             name: '\u70ED\u95E8\u63A8\u8350'
           }
         ],
-        title: '\u300A\u51E1\u4EBA\u4FEE\u4ED9\u4F20\u300B',
+        title: '《凡人修仙传》',
         views: 5213
       }
     ]
+    // 演示时使用截止-----
     uni.showToast({ title: e?.message || '首页数据获取失败', icon: 'none' })
   }
 }

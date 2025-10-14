@@ -82,12 +82,11 @@
 import dayjs from 'dayjs'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useToast } from 'wot-design-uni'
+
 // 导入头像上传 API
 // 导入路径根据自己实际情况调整，万不可一贴了之
 import { useColPickerData } from '@/hooks/useColPickerData'
-
 import { useTokenStore } from '@/store/token'
-
 import { useUserStore } from '@/store/user'
 
 const { colPickerData, findChildrenByCode } = useColPickerData()
@@ -100,6 +99,17 @@ definePage({
   },
 })
 
+interface ProfileForm {
+  nickname: string
+  gender: number
+  birthday: string | number
+  address?: string
+  province?: string
+  city?: string
+  description: string
+  phone: string | number
+}
+
 // 获取store
 const tokenStore = useTokenStore()
 const userStore = useUserStore()
@@ -109,16 +119,7 @@ const toast = useToast()
 const formRef = ref<any>()
 
 // 表单数据
-const form = reactive<{
-  nickname: string
-  gender: number
-  birthday: string | number
-  address?: string
-  province?: string
-  city?: string
-  description: string
-  phone: string | number
-}>({
+const form = reactive<ProfileForm>({
   nickname: '',
   gender: 0,
   birthday: '',
@@ -304,14 +305,18 @@ watch(
   { immediate: true, deep: true }
 )
 
-/* 给组件用的计算属性 */
-const birthdayStr = computed<string>({
-  get() { return form.birthday ? dayjs(form.birthday).format('YYYY-MM-DD') : '' },
-  set(val) { form.birthday = val ? dayjs(val).valueOf() : 0 }
+/**
+ *  给组件用的计算属性
+ * 组件可识别时间戳以及日期格式
+  get(): 设置有效日期为时间格式,转成「毫秒时间戳」时间戳 → YYYY-MM-DD
+  set(): 将后端回显数据进行,时间戳转化[有效日期]显示
+ */
+const birthdayStr = computed<string | number>({
+  get() { return form.birthday ? form.birthday : '' },
+  set(val) { form.birthday = val ? dayjs(val).valueOf() : '' }
 })
 
 // 选择地址数据
-/* 2. 组件真正绑定的计算属性 */
 const addressArr = computed<string[]>({
   get() {
     // 如果 form.address 是地址文本，需要转换为地址码数组用于回显
@@ -373,7 +378,10 @@ const handleSave = async () => {
       uni.showLoading({ title: '保存中...' })
       const newForms = {
         ...form,
-        birthday: dayjs(form.birthday).format('YYYY-MM-DD')
+        // birthday: dayjs(form.birthday).format('YYYY-MM-DD')
+        birthday: form.birthday && dayjs(form.birthday).isValid()
+          ? dayjs(form.birthday).format('YYYY-MM-DD')
+          : ''
       }
 
       // 更新后端数据

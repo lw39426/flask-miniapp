@@ -38,7 +38,7 @@
           <view class="form-item">
             <text class="label">账号</text>
             <input
-              v-model="form.phone"
+              v-model="form.username"
               class="input"
               type="text"
               placeholder="请输入账号"
@@ -68,7 +68,7 @@
             <input
               v-model="form.password"
               class="input"
-              :type="(passwordVisible ? 'text' : 'password') as any"
+              :type="(passwordVisible ? 'text' : 'password') "
               placeholder="请输入密码"
               placeholder-class="placeholder"
             >
@@ -78,6 +78,11 @@
               @tap="togglePasswordVisibility"
             />
           </view>
+
+          <!-- 账号密码操作按钮 -->
+          <button class="submit-btn" @tap="handleSubmit">
+            登录
+          </button>
         </block>
 
         <!-- 手机号登录表单 -->
@@ -114,12 +119,13 @@
               {{ countdownText }}
             </button>
           </view>
+
+          <!-- 手机号操作按钮 -->
+          <button class="submit-btn" @tap="handlePhoneSubmit">
+            登录
+          </button>
         </block>
 
-        <!-- 主操作按钮 -->
-        <button class="submit-btn" @tap="handleSubmit">
-          登录
-        </button>
         <!-- 切换模式 -->
         <view class="switch-mode">
           <text class="extra-link" @tap="forgotPassword">忘记密码?</text>
@@ -165,10 +171,11 @@ const loginType = ref('password')
 
 // 表单数据
 const form = reactive({
-  username: '',
+  username: 'liwanwan',
   phone: '13111111111',
+  phonePwd: '111111',
   code: '1',
-  password: '111111',
+  password: '123123',
   captcha: '1', // 用户输入的文本
   captcha_key: '' // 后端给的 key
 })
@@ -219,87 +226,97 @@ const sendCode = () => {
   })
 }
 
-// 提交表单
+// 提交账密登录表单
 const handleSubmit = async () => {
   try {
-    // 表单验证
-    if (loginType.value === 'password') {
-      // 账号密码登录验证
-      if (!form.phone) {
-        uni.showToast({ title: '请输入账号', icon: 'none' })
-        return
-      }
-      if (!form.password) {
-        uni.showToast({ title: '请输入密码', icon: 'none' })
-        return
-      }
-      if (!form.captcha) {
-        uni.showToast({ title: '请输入验证码', icon: 'none' })
-        return
-      }
-
-      console.log('执行账号密码登录:', { phone: form.phone, password: form.password })
-      const res = await tokenStore.login(form)
-      if (res) {
-        uni.showToast({
-          title: '登录成功',
-          icon: 'success',
-        })
-
-        // 登录成功后返回上一页或跳转到首页
-        setTimeout(() => {
-          const pages = getCurrentPages()
-          if (pages.length > 1) {
-            uni.navigateBack()
-          }
-          else {
-            uni.switchTab({ url: '/pages/index/index' })
-          }
-        }, 1000)
-      }
+    // 账号密码登录验证
+    if (!form.username) {
+      uni.showToast({ title: '请输入账号', icon: 'none' })
+      return
     }
-    else {
-      // 手机号验证码登录验证
-      if (!form.phone) {
-        uni.showToast({ title: '请输入手机号', icon: 'none' })
-        return
-      }
-      if (!/^1[3-9]\d{9}$/.test(form.phone)) {
-        uni.showToast({ title: '请输入正确的手机号', icon: 'none' })
-        return
-      }
-      if (!form.code) {
-        uni.showToast({ title: '请输入验证码', icon: 'none' })
-        return
-      }
+    if (!form.password) {
+      uni.showToast({ title: '请输入密码', icon: 'none' })
+      return
+    }
+    if (!form.captcha) {
+      uni.showToast({ title: '请输入验证码', icon: 'none' })
+      return
+    }
 
-      console.log('执行手机号登录:', { phone: form.phone, code: form.code })
-      // 构建手机号登录的表单
-      const phoneLoginForm = {
-        phone: form.phone,
-        code: form.code,
-        password: form.password,
-        type: 'phone' // 标识这是手机号登录
-      }
+    console.log('执行账号密码登录:', { phone: form.username, password: form.password })
+    const res = await tokenStore.login(form)
+    if (res) {
+      uni.showToast({
+        title: '登录成功',
+        icon: 'success',
+      })
 
-      const res = await tokenStore.login(phoneLoginForm)
-      if (res) {
-        uni.showToast({
-          title: '登录成功',
-          icon: 'success',
-        })
+      // 登录成功后返回上一页或跳转到首页
+      setTimeout(() => {
+        const pages = getCurrentPages()
+        if (pages.length > 1) {
+          uni.navigateBack()
+        }
+        else {
+          uni.switchTab({ url: '/pages/index/index' })
+        }
+      }, 1000)
+    }
+  }
+  catch (error) {
+    // 统一处理登录失败
+    uni.showToast({
+      title: error?.message || '登录失败，请重试',
+      icon: 'error',
+      duration: 2500
+    })
+  }
+}
 
-        // 登录成功后返回上一页或跳转到首页
-        setTimeout(() => {
-          const pages = getCurrentPages()
-          if (pages.length > 1) {
-            uni.navigateBack()
-          }
-          else {
-            uni.switchTab({ url: '/pages/index/index' })
-          }
-        }, 1500)
-      }
+// 提交手机号登录表单
+const handlePhoneSubmit = async () => {
+  try {
+    // 表单验证
+    // 手机号验证码登录验证
+    if (!form.phone) {
+      uni.showToast({ title: '请输入手机号', icon: 'none' })
+      return
+    }
+    if (!/^1[3-9]\d{9}$/.test(form.phone)) {
+      uni.showToast({ title: '请输入正确的手机号', icon: 'none' })
+      return
+    }
+    if (!form.code) {
+      uni.showToast({ title: '请输入验证码', icon: 'none' })
+      return
+    }
+
+    console.log('执行手机号登录:', { phone: form.phone, code: form.code })
+    // 构建手机号登录的表单
+    const phoneLoginForm = {
+      phone: form.phone,
+      code: form.code,
+      password: form.phonePwd,
+      type: 'phone' // 标识这是手机号登录
+    }
+
+    const res = await tokenStore.loginByPhone(phoneLoginForm)
+    if (res) {
+      uni.showToast({
+        title: '登录成功',
+        icon: 'success',
+      })
+
+      // 登录成功后返回上一页或跳转到首页
+      setTimeout(() => {
+        const pages = getCurrentPages()
+        if (pages.length > 1) {
+          uni.navigateBack()
+        }
+        else {
+          uni.switchTab({ url: '/pages/index/index' })
+        }
+      }, 1500)
     }
   }
   catch (error) {

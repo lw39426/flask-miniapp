@@ -49,6 +49,20 @@
               @load="onImageLoad"
               @error="onImageError"
             />
+            <!-- 文字角标 -->
+            <view
+              class="corner-text-flag"
+              :style="item.tags?.length ? { backgroundColor: item.tags[0].color } : {}"
+            >
+              {{ item.tags[0].name || '' }}
+            </view>
+            <!-- 图片角标 -->
+            <image
+              v-if="false"
+              class="corner-flag"
+              src="/static/images/flag-new.png"
+              mode="aspectFit"
+            />
             <view class="waterfall-info">
               <text class="waterfall-title">{{ item.name }}</text>
               <view class="waterfall-price-row">
@@ -80,6 +94,7 @@
 <script lang="ts" setup>
 import type { Product } from '@/api/home'
 import { nextTick, onMounted, ref, watch } from 'vue'
+import { getCategoryProducts } from '@/api/home'
 
 // Props 定义
 interface CategoryItem {
@@ -281,8 +296,22 @@ const loadCategoryProducts = async (categoryId: number) => {
 
   try {
     // 这里应该调用真实的API
-    // const data = await getCategoryProducts(categoryId, { page: 1, limit: 6 })
-
+    const res = await getCategoryProducts(categoryId, { page: 1, limit: 6 })
+    console.log('获取分类商品成功:', res)
+    if (res.code !== 200) {
+      throw new Error('获取分类商品成功')
+    }
+    // 没有缓存的image: `https://picsum.photos/300/${200 + Math.floor(Math.random() * 200)}?random=${categoryId * 100 + index}`,
+    products.value = res.data.products
+    layoutWaterfall(res.data.products)
+  }
+  catch (e: any) {
+    console.error(e)
+    uni.showToast({ title: e?.message || '加载分类商品失败', icon: 'none' })
+    waterfallColumns.value = [[], []]
+    columnHeights.value = [0, 0]
+    products.value = []
+    // 加载失败时，演示使用---
     // 临时模拟数据，增加更多样化的商品
     const mockProducts: ProductWithHeight[] = Array.from({ length: 6 }, (_, index) => ({
       id: categoryId * 100 + index,
@@ -293,15 +322,9 @@ const loadCategoryProducts = async (categoryId: number) => {
       sales: Math.floor(Math.random() * 1000) + 10,
       stock: Math.floor(Math.random() * 100) + 1,
     }))
-    // 没有缓存的image: `https://picsum.photos/300/${200 + Math.floor(Math.random() * 200)}?random=${categoryId * 100 + index}`,
     products.value = mockProducts
     layoutWaterfall(mockProducts)
-  }
-  catch (e: any) {
-    uni.showToast({ title: e?.message || '加载分类商品失败', icon: 'none' })
-    waterfallColumns.value = [[], []]
-    columnHeights.value = [0, 0]
-    products.value = []
+    // 加载失败时，演示使用----
   }
   finally {
     loading.value = false
@@ -331,11 +354,15 @@ const handleViewMore = () => {
 
 // 监听分类变化
 watch(() => props.categories, (newCategories) => {
-  if (newCategories.length > 0 && !activeCategory.value) {
+  if (newCategories && newCategories.length > 0 && !activeCategory.value) {
     const firstCategory = newCategories[0]
     activeCategory.value = firstCategory.id
     currentCategoryName.value = firstCategory.name
     loadCategoryProducts(firstCategory.id)
+  }
+  else {
+    // 演示时使用
+    loadCategoryProducts(1)
   }
 }, { immediate: true })
 
@@ -466,6 +493,7 @@ onMounted(() => {
 
 .waterfall-item {
   background: #ffffff;
+  position: relative;
   border-radius: 16rpx;
   overflow: hidden;
   margin-bottom: 16rpx;
@@ -582,6 +610,26 @@ onMounted(() => {
 .empty-text {
   font-size: 28rpx;
   color: #999999;
+}
+/* 角标 */
+/* 图片角标 */
+.corner-flag {
+  position: absolute;
+  top: 10rpx;
+  right: 10rpx;
+  width: 60rpx; /* 想大就调 */
+  height: 60rpx;
+}
+/* 文字角标 */
+.corner-text-flag {
+  position: absolute;
+  top: 20rpx;
+  left: 0;
+  background: #ff4141;
+  color: #fff;
+  font-size: 20rpx;
+  padding: 6rpx 8rpx;
+  border-radius: 0 0 12rpx 0;
 }
 
 /* 响应式优化 */

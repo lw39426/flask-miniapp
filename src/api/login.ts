@@ -27,10 +27,24 @@ export function getCode(): Promise<ICaptcha> {
 }
 
 /**
- * 用户登录
+ * 用户登录-账密登录
  * @param loginForm 登录表单
  */
 export function login(loginForm: ILoginForm): Promise<IAuthLoginRes> {
+  return http.post<ApiResponse<IAuthLoginRes>>('/miniapp/auth/login', loginForm).then((res) => {
+    console.log('登录-res: ', res)
+    if (res.code === 200) {
+      return res.data
+    }
+    throw new Error(res.message || '登录失败')
+  })
+}
+
+/**
+ * 用户登录-手机号登录
+ * @param loginForm 登录表单
+ */
+export function loginByPhone(loginForm: ILoginForm): Promise<IAuthLoginRes> {
   return http.post<ApiResponse<IAuthLoginRes>>('/miniapp/auth/login', loginForm).then((res) => {
     console.log('登录-res: ', res)
     if (res.code === 200) {
