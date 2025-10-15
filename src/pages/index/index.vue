@@ -63,8 +63,9 @@
 
     <!-- 产品分类和商品组件 -->
     <CategoryProducts
+      v-if="navItems && navItems.length"
       :categories="navItems"
-      :default-category-id="activeCategory"
+      :default-category-id="activeCategory || (navItems[0] && navItems[0].id)"
       @category-change="onCategoryChange"
       @product-click="goToProduct"
       @view-more="goToCategoryDetail"
@@ -137,7 +138,24 @@ const goToMoreArticles = () => uni.navigateTo({ url: '/pages/article/list' })
 const formatDate = (dateStr: string) => {
   if (!dateStr)
     return ''
-  const date = new Date(dateStr)
+  let normalized = dateStr.trim()
+
+  // iOS 兼容："yyyy-MM-dd HH:mm:ss" -> "yyyy/MM/dd HH:mm:ss"
+  if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}$/.test(normalized)) {
+    normalized = normalized.replace(/-/g, '/')
+  }
+
+  let date = new Date(normalized)
+
+  // 兜底：尝试 ISO 格式 "yyyy-MM-ddTHH:mm:ss"
+  if (Number.isNaN(date.getTime())) {
+    const tIso = dateStr.replace(' ', 'T')
+    date = new Date(tIso)
+  }
+
+  if (Number.isNaN(date.getTime()))
+    return ''
+
   const now = new Date()
   const diff = now.getTime() - date.getTime()
   const days = Math.floor(diff / (1000 * 60 * 60 * 24))

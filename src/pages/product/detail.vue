@@ -199,7 +199,7 @@ const loadProductDetail = async () => {
   }
   catch (error) {
     console.error('获取商品详情失败:', error)
-    uni.showToast({
+    await uni.showToast({
       title: '获取商品详情失败',
       icon: 'error'
     })
@@ -531,7 +531,7 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .product-detail-page {
   background-color: #f8f6f0;
   height: 100vh;
@@ -669,41 +669,6 @@ onMounted(() => {
 .comment-section {
   background: #f8f9fa;
   padding: 32rpx 0;
-}
-
-/* rich-text 内容样式 */
-.detail-content {
-  line-height: 1.6;
-  font-size: 26rpx;
-  color: #333;
-  word-break: break-word;
-}
-
-/* 针对 rich-text 的全局样式调整 */
-:deep(.detail-content) {
-  line-height: 1.6 !important;
-}
-
-/* 优化 rich-text 中的图片显示 */
-:deep(.detail-content img) {
-  max-width: 100% !important;
-  height: auto !important;
-  display: block;
-  margin: 16rpx auto;
-  border-radius: 12rpx;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
-}
-
-/* 优化代码块显示 */
-:deep(.detail-content pre) {
-  overflow-x: auto !important;
-  white-space: pre-wrap !important;
-  word-break: break-all !important;
-}
-
-/* 优化链接显示 */
-:deep(.detail-content a) {
-  word-break: break-all !important;
 }
 
 /* 加载状态 */

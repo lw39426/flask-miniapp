@@ -71,6 +71,9 @@ export default defineConfig(({ command, mode }) => {
       UniLayouts(),
       UniPlatform(),
       UniManifest(),
+      {
+        name: 'babel:plugin-transform-private-property-in-object'
+      },
       // Optimization 插件需要 page.json 文件，故应在 UniPages 插件之后执行
       Optimization({
         enable: {
@@ -142,6 +145,9 @@ export default defineConfig(({ command, mode }) => {
       __VITE_APP_PROXY__: JSON.stringify(VITE_APP_PROXY_ENABLE),
     },
     css: {
+      preprocessorOptions: {
+        scss: { }
+      },
       postcss: {
         plugins: [
           // autoprefixer({

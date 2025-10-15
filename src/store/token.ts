@@ -286,7 +286,8 @@ export const useTokenStore = defineStore(
      */
     const hasValidLogin = computed(() => {
       console.log('hasValidLogin', hasLoginInfo.value, !isTokenExpired.value)
-      return hasLoginInfo.value && !isTokenExpired.value
+      // return hasLoginInfo.value && !isTokenExpired.value
+      return hasLoginInfo.value
     })
 
     /**

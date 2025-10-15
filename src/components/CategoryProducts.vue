@@ -52,9 +52,9 @@
             <!-- 文字角标 -->
             <view
               class="corner-text-flag"
-              :style="item.tags?.length ? { backgroundColor: item.tags[0].color } : {}"
+              :style="item.tags && item.tags.length ? { backgroundColor: item.tags[0].color } : {}"
             >
-              {{ item.tags[0].name || '' }}
+              {{ item.tags && item.tags.length ? (item.tags[0]?.name || '') : '' }}
             </view>
             <!-- 图片角标 -->
             <image
@@ -64,7 +64,7 @@
               mode="aspectFit"
             />
             <view class="waterfall-info">
-              <text class="waterfall-title">{{ item.name }}</text>
+              <text class="waterfall-title">{{ item?.name || '' }}</text>
               <view class="waterfall-price-row">
                 <text class="waterfall-price">¥{{ item.sale_price || item.price }}</text>
                 <text v-if="item.sale_price && item.price !== item.sale_price" class="waterfall-original-price">¥{{ item.price }}</text>
@@ -302,8 +302,8 @@ const loadCategoryProducts = async (categoryId: number) => {
       throw new Error('获取分类商品成功')
     }
     // 没有缓存的image: `https://picsum.photos/300/${200 + Math.floor(Math.random() * 200)}?random=${categoryId * 100 + index}`,
-    products.value = res.data.products
-    layoutWaterfall(res.data.products)
+    products.value = (res?.data?.products || [])
+    layoutWaterfall(products.value)
   }
   catch (e: any) {
     console.error(e)

@@ -30,6 +30,15 @@ export function http<T>(options: CustomRequestOptions) {
           // 2.1  处理业务逻辑错误
           const { code, message, data } = res.data as IResponse<T>
           // console.log('222:', res.data)
+          // 429 业务码：请求过于频繁，专用提示并中止
+          if (code === 429) {
+            !options.hideErrorToast && uni.showToast({
+              icon: 'none',
+              title: message || '请求过于频繁，请稍后再试',
+            })
+            // eslint-disable-next-line prefer-promise-reject-errors
+            return reject(res.data as any)
+          }
           // 0和200当做成功都很普遍，这里直接兼容两者，见 ResultEnum
           if (code !== ResultEnum.Success0 && code !== ResultEnum.Success200) {
             throw new Error(`请求错误[${code}]：${message}`)
@@ -160,11 +169,19 @@ export function http<T>(options: CustomRequestOptions) {
           }
         }
         else {
+          // 429 过于频繁：专用提示
+          if (res.statusCode === 429 || (resData as any)?.code === 429) {
+            !options.hideErrorToast && uni.showToast({
+              icon: 'none',
+              title: (resData as any)?.message || '请求过于频繁，请稍后再试',
+            })
+            return reject(res.data)
+          }
           // 其他错误 -> 根据后端错误信息轻提示
           !options.hideErrorToast
           && uni.showToast({
             icon: 'none',
-            title: resData.message || '请求错误',
+            title: (resData as any)?.message || '请求错误',
           })
           reject(res.data)
         }

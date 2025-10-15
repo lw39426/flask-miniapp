@@ -123,10 +123,11 @@
     "pinia": "2.0.36",
     "pinia-plugin-persistedstate": "3.2.1",
     "vue": "^3.4.21",
-    "wot-design-uni": "^1.12.4",
+    "wot-design-uni": "^1.13.0",
     "z-paging": "2.8.7"
   },
   "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
     "@dcloudio/types": "^3.4.8",
