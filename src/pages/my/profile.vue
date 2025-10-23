@@ -13,59 +13,49 @@
       </view>
     </view>
     <!-- 个人资料表单 -->
-    <sar-form ref="formRef" :model="form" class="profile-form">
+    <sar-form ref="formRef" :model="form" :rules="rules" class="profile-form">
       <view class="section-title">
         个人资料信息
       </view>
-      <sar-form-item label="用户名">
-        <sar-input
-          v-model="form.nickname"
-          inlaid
-          placeholder="请输入用户名"
-        />
+      <sar-form-item label="用户名" prop="nickname">
+        <sar-input v-model="form.nickname" inlaid placeholder="请输入用户名" />
       </sar-form-item>
-      <sar-form-item label="性别">
-        <sar-radio-group
+      <sar-form-item label="性别" prop="gender">
+        <sar-picker-input
           v-model="form.gender"
-          :options="genderOptions"
+          title="请选择性别"
+          placeholder="请选择性别"
+          clearable
+          :columns="columns"
+          @change="onChange"
         />
       </sar-form-item>
-      <sar-form-item label="生日">
+      <sar-form-item label="生日" prop="birthday">
         <sar-datetime-picker-input
-          v-model="birthdayStr"
+          v-model="form.birthday"
           type="yMd"
-          placeholder="Pick a date"
+          placeholder="请输入生日"
+          value-format="YYYY-MM-DD"
         />
       </sar-form-item>
-      <sar-input
-        v-model="form.phone"
-        label="关联手机"
-        type="tel"
-        marker-side="after"
-        placeholder="请输入手机号"
-        :rules="[{ required: true, pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确' }]"
-      />
-      <sar-picker-input
-        v-model="addressArr"
-        label="地址"
-        placeholder="请选择地址"
-        label-width="100px"
-        prop="address"
-        :columns="area"
-        :column-change="areaChange"
-        @confirm="handleConfirm"
-      />
-      <sar-input
-        v-model="form.description"
-        label="个人简介"
-        label-width="100px"
-        type="textarea"
-        :maxlength="300"
-        show-word-limit
-        placeholder="请输入活动细则信息"
-        clearable
-        prop="content"
-      />
+      <sar-form-item label="绑定手机" prop="phone">
+        <sar-input v-model="form.phone" type="tel" placeholder="请输入手机号" :formatter="formatPhone" />
+      </sar-form-item>
+      <sar-form-item label="所在地区" prop="address">
+        <sar-picker-input
+          v-model="addressArr"
+          placeholder="请选择地址"
+          :columns="area"
+          :column-change="areaChange"
+          @confirm="handleConfirm"
+        />
+      </sar-form-item>
+      <sar-form-item label="个人简介" prop="description">
+        <sar-input
+          v-model="form.description" show-count type="textarea" :maxlength="300"
+          placeholder="请输入个人简介" clearable
+        />
+      </sar-form-item>
     </sar-form>
 
     <!-- 保存按钮 -->
@@ -101,7 +91,7 @@ definePage({
 interface ProfileForm {
   nickname: string
   gender: number
-  birthday: string | number
+  birthday: string | Date
   address?: string
   province?: string
   city?: string
@@ -128,6 +118,103 @@ const form = reactive<ProfileForm>({
   city: '',
   description: '',
 })
+
+/**
+ * 表单校验规则
+ * - 使用 async-validator 风格：required/pattern/validator
+ * - 注意：gender 允许 0（“其他”），不能用简单 required 判断
+ * - birthday 不得晚于今天
+ * - phone 校验国内 11 位手机号
+ * - address 至少选择到市（两级）
+ * - description 非必填，<=300 字
+ */
+const rules = reactive<Record<string, any>>({
+  nickname: [
+    { required: true, message: '请输入用户名' },
+    { pattern: /^[\u4E00-\u9FA5\w]{2,20}$/, message: '用户名为2-20位中英文、数字或下划线' },
+  ],
+  gender: [
+    {
+      validator: (_rule: any, value: number, callback: (err?: Error) => void) => {
+        const ok = [0, 1, 2].includes(Number(value))
+        if (!ok)
+          return callback(new Error('请选择性别'))
+        callback()
+      },
+    },
+  ],
+  birthday: [
+    { required: true, message: '请选择生日' },
+    {
+      validator: (_rule: any, value: string | number, callback: (err?: Error) => void) => {
+        if (!value)
+          return callback(new Error('请选择生日'))
+        const d = dayjs(value as any)
+        if (!d.isValid())
+          return callback(new Error('生日格式不正确'))
+        if (d.isAfter(dayjs(), 'day'))
+          return callback(new Error('生日不能晚于今天'))
+        callback()
+      },
+    },
+  ],
+  phone: [
+    { required: true, message: '请输入手机号' },
+    {
+      validator: (_rule: any, value: string | number, callback: (err?: Error) => void) => {
+        const v = String(value ?? '').replace(/\s|-/g, '')
+        const ok = /^1[3-9]\d{9}$/.test(v)
+        if (!ok)
+          return callback(new Error('请输入有效的手机号'))
+        callback()
+      },
+    },
+  ],
+  address: [
+    { required: true, message: '请选择所在地区' },
+    {
+      validator: (_rule: any, value: string, callback: (err?: Error) => void) => {
+        if (!value)
+          return callback(new Error('请选择所在地区'))
+        const parts = String(value).split('/')
+        if (parts.length < 2)
+          return callback(new Error('至少选择到市'))
+        callback()
+      },
+    },
+  ],
+  description: [
+    {
+      validator: (_rule: any, value: string, callback: (err?: Error) => void) => {
+        if (!value)
+          return callback()
+        if (String(value).length > 300)
+          return callback(new Error('个人简介不超过300字'))
+        callback()
+      },
+    },
+  ],
+})
+
+// 性别选项列
+const columns = [
+  {
+    value: 1,
+    label: '男性',
+  },
+  {
+    value: 2,
+    label: '女性',
+  },
+  {
+    value: 0,
+    label: '其他',
+  },
+]
+// 性别选择变化处理
+const onChange = (value: number) => {
+  console.log('选择的性别:', value)
+}
 
 // 根据地址文本查找对应的地址码数组（用于回显）
 const findAddressCodesByText = (addressText: string): string[] => {
@@ -289,6 +376,20 @@ watch(
       form.nickname = newUserInfo.nickname || newUserInfo.username || ''
       form.gender = newUserInfo.gender || 0
       form.birthday = newUserInfo.birthday || ''
+      // 规范化 birthday 为 YYYY-MM-DD 字符串，避免向日期组件传 Number
+      if (form.birthday) {
+        const b: any = form.birthday
+        if (typeof b === 'number') {
+          form.birthday = dayjs(b).format('YYYY-MM-DD')
+        }
+        else if (Object.prototype.toString.call(b) === '[object Date]') {
+          form.birthday = dayjs(b as Date).format('YYYY-MM-DD')
+        }
+        else if (typeof b === 'string') {
+          const d = dayjs(b)
+          form.birthday = d.isValid() ? d.format('YYYY-MM-DD') : ''
+        }
+      }
       form.phone = newUserInfo.phone || ''
       form.province = newUserInfo.province || ''
       form.city = newUserInfo.city || ''
@@ -303,17 +404,6 @@ watch(
   },
   { immediate: true, deep: true }
 )
-
-/**
- *  给组件用的计算属性
- * 组件可识别时间戳以及日期格式
-  get(): 设置有效日期为时间格式,转成「毫秒时间戳」时间戳 → YYYY-MM-DD
-  set(): 将后端回显数据进行,时间戳转化[有效日期]显示
- */
-const birthdayStr = computed<string | number>({
-  get() { return form.birthday ? form.birthday : '' },
-  set(val) { form.birthday = val ? dayjs(val).valueOf() : '' }
-})
 
 // 选择地址数据
 const addressArr = computed<string[]>({
@@ -365,45 +455,41 @@ const formatPhone = (phone?: string) => {
 // 导航
 const goBack = () => uni.navigateBack()
 
-// 核心更新逻辑
-const handleSave = async () => {
-  if (!formRef.value)
+/**
+ * 核心更新逻辑（按 Sard UI 示例使用 Promise 风格校验）
+ */
+const handleSave = () => {
+  const formEl = formRef.value
+  if (!formEl)
     return
 
-  const { valid, errors } = await formRef.value.validate()
-
-  if (valid) {
-    try {
-      uni.showLoading({ title: '保存中...' })
-      const newForms = {
-        ...form,
-        // birthday: dayjs(form.birthday).format('YYYY-MM-DD')
-        birthday: form.birthday && dayjs(form.birthday).isValid()
-          ? dayjs(form.birthday).format('YYYY-MM-DD')
-          : ''
+  formEl
+    .validate()
+    .then(async () => {
+      try {
+        uni.showLoading({ title: '保存中...' })
+        const newForms = {
+          ...form,
+          birthday: form.birthday && dayjs(form.birthday as any).isValid()
+            ? dayjs(form.birthday as any).format('YYYY-MM-DD')
+            : ''
+        }
+        await userStore.updateUserInfo(newForms as any)
+        await userStore.fetchUserInfo()
+        uni.hideLoading()
+        toast.success('保存成功')
       }
-
-      // 更新后端数据
-      await userStore.updateUserInfo(newForms as any)
-
-      // 重新获取最新的用户信息，确保本地状态同步
-      await userStore.fetchUserInfo()
-
-      uni.hideLoading()
-      toast.success('保存成功')
-    }
-    catch (error) {
-      uni.hideLoading()
-      toast.fail('保存失败')
-      console.error('更新用户信息失败:', error)
-    }
-  }
-  else {
-    if (errors && errors[0] && errors[0].message) {
-      toast.fail(errors[0].message)
-    }
-    console.log('表单校验失败', errors)
-  }
+      catch (error) {
+        uni.hideLoading()
+        toast.fail('保存失败')
+        console.error('更新用户信息失败:', error)
+      }
+    })
+    .catch((errors: any) => {
+      const msg = errors?.[0]?.message || '表单校验失败'
+      toast.fail(msg)
+      console.log('error submit!', errors)
+    })
 }
 
 const onBirthdayConfirm = ({ value }: { value: Date }) => {
@@ -429,45 +515,48 @@ onMounted(() => {
 .profile-page {
   background-color: #f8f8f8;
   min-height: 100vh;
-  padding-bottom: 200rpx; /* 为底部保存按钮和安全区域留出空间 */
+  /* 为底部保存按钮和安全区域留出空间 */
 }
 
 .custom-nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 88rpx;
+  height: 100rpx;
   padding: var(--status-bar-height) 30rpx 0;
   background-color: #fff;
   position: sticky;
   top: 0;
   z-index: 100;
+}
 
-  .nav-left,
-  .nav-right {
-    width: 60rpx;
-    height: 60rpx;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .nav-title {
-    font-size: 32rpx;
-    font-weight: 500;
-  }
-  .nav-icon {
-    font-size: 36rpx;
-  }
+.nav-left,
+.nav-right {
+  width: 60rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-title {
+  font-size: 32rpx;
+  font-weight: 500;
+}
+
+.nav-icon {
+  font-size: 36rpx;
 }
 
 .profile-form {
   margin-top: 20rpx;
-  .section-title {
-    padding: 20rpx 30rpx 10rpx;
-    font-size: 24rpx;
-    color: #999;
-    background-color: transparent;
-  }
+}
+
+.section-title {
+  padding: 20rpx 30rpx 10rpx;
+  font-size: 24rpx;
+  color: #999;
+  background-color: transparent;
 }
 
 .save-button-container {

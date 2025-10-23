@@ -11,20 +11,10 @@
     <view class="profile-header">
       <!-- 用户信息区域 -->
       <view class="user-info">
-        <!-- <sar-img-cropper
-          v-model="show"
-          :img-src="src"
-          @confirm="handleConfirm"
-          @cancel="handleCancel"
-        /> -->
-        <view class="avatar" @click="upload">
-          <sar-avatar
-            round
-            width="100%"
-            height="100%"
-            :src="displayAvatar"
-            mode="aspectFill"
-            custom-class=""
+        <view class="avatar">
+          <AvatarUpload
+            :default-avatar="displayAvatar"
+            @image-selected="handleNewImage"
           />
         </view>
         <view class="user-details">
@@ -46,7 +36,7 @@
             <text class="stat-label">优惠券</text>
           </view>
         </view>
-        <text v-else class="login-arrow">></text>
+        <text v-else class="i-carbon-chevron-right" />
       </view>
 
       <!-- 功能面板 -->
@@ -80,12 +70,12 @@
         <view v-for="(group, groupIndex) in menuGroups" :key="groupIndex" class="menu-group">
           <view v-for="(item, index) in group" :key="index" class="menu-item" @tap="handleMenuClick(item)">
             <view class="menu-left">
-              <text class="menu-icon">{{ item.icon }}</text>
+              <text class="menu-icon" :class="[item.icon]" />
               <text class="menu-text">{{ item.name }}</text>
             </view>
             <view class="menu-right">
               <text v-if="hasLogin && item.badge" class="menu-badge">{{ item.badge }}</text>
-              <text class="menu-arrow">&gt;111</text>
+              <text class="i-carbon:chevron-right text-gray" />
             </view>
           </view>
         </view>
@@ -97,22 +87,24 @@
           <text class="title">关于服务</text>
         </view>
       </view> -->
-
       <!-- 底部面板 -->
       <view class="info-footer">
         期待和你的每一次相遇 ^_^
       </view>
     </view>
+    <sar-crop-image-agent />
   </view>
 </template>
 
 <script lang="ts" setup>
 import { onShow } from '@dcloudio/uni-app'
 import { storeToRefs } from 'pinia'
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { cropImage } from 'sard-uniapp'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { getFavoriteStats } from '@/api/favorite'
-import { uploadFile } from '@/api/foo'
+import AvatarUpload from '@/components/CustomPreview.vue' // 确保路径正确
 import { LOGIN_PAGE } from '@/router/config'
+
 import { useTokenStore } from '@/store/token'
 import { useUserStore } from '@/store/user'
 
@@ -135,6 +127,12 @@ const hasLogin = computed(() => {
   const hasToken = !!(ti?.access_token || ti?.token)
   return hasLoginStore.value || hasToken
 })
+
+// 处理来自CustomPreview组件的头像更新事件
+const handleNewImage = (newPath: string) => {
+  // CustomPreview组件已经处理了上传并更新了userStore，这里只需要记录日志
+  console.log('父组件收到头像更新通知:', newPath)
+}
 
 // 用户信息
 const userInfo = computed(() => userStore.userInfo)
@@ -173,184 +171,68 @@ const changeCover = () => {
     sizeType: ['compressed'],
     sourceType: ['album', 'camera'],
     success: (res) => {
-      const tempFilePath = res.tempFilePaths[0]
-      if (!tempFilePath) {
-        uni.showToast({ title: '请选择图片', icon: 'none' })
-        return
-      }
-      uni.showLoading({ title: '上传中...' })
-      const baseURL = import.meta.env.VITE_SERVER_BASEURL
-      uni.uploadFile({
-        url: `${baseURL}/miniapp/user/bgCover`,
-        filePath: tempFilePath,
-        name: 'file',
-        header: {
-          Authorization: `Bearer ${(tokenStore.tokenInfo as any).access_token
-          || (tokenStore.tokenInfo as any).token}`
-        },
-        success: (uploadRes) => {
-          try {
-            const parsed = JSON.parse(uploadRes.data || '{}')
-            if (parsed.code === 200 && parsed.data?.bg_cover) {
-              const fullUrl = parsed.data.bg_cover.startsWith('http')
-                ? parsed.data.bg_cover
-                : `${baseURL}${parsed.data.bg_cover}`
-              coverUrl.value = fullUrl
-              // 更新用户信息
-              if (userStore.userInfo) {
-                userStore.userInfo.bg_cover = fullUrl
-                userStore.updateUserInfo({ ...userStore.userInfo, bg_cover: fullUrl })
+      cropImage({
+        src: res.tempFilePaths[0],
+        cropScale: '16:9',
+        success(filePath) {
+          console.log('裁切成功', filePath)
+          const tempFilePath = res.tempFilePaths[0]
+          if (!tempFilePath) {
+            uni.showToast({ title: '请选择图片', icon: 'none' })
+            return
+          }
+          uni.showLoading({ title: '上传中...' })
+          const baseURL = import.meta.env.VITE_SERVER_BASEURL
+          uni.uploadFile({
+            url: `${baseURL}/miniapp/user/bgCover`,
+            filePath: tempFilePath,
+            name: 'file',
+            header: {
+              Authorization: `Bearer ${(tokenStore.tokenInfo as any).access_token
+              || (tokenStore.tokenInfo as any).token}`
+            },
+            success: (uploadRes) => {
+              try {
+                const parsed = JSON.parse(uploadRes.data || '{}')
+                if (parsed.code === 200 && parsed.data?.bg_cover) {
+                  const fullUrl = parsed.data.bg_cover.startsWith('http')
+                    ? parsed.data.bg_cover
+                    : `${baseURL}${parsed.data.bg_cover}`
+                  coverUrl.value = fullUrl
+                  // 更新用户信息
+                  if (userStore.userInfo) {
+                    userStore.userInfo.bg_cover = fullUrl
+                    userStore.updateUserInfo({ ...userStore.userInfo, bg_cover: fullUrl })
+                  }
+                  uni.showToast({ title: '封面已更新', icon: 'success' })
+                }
+                else {
+                  uni.showToast({ title: parsed.message || '上传失败', icon: 'none' })
+                }
               }
-              uni.showToast({ title: '封面已更新', icon: 'success' })
+              catch {
+                uni.showToast({ title: '解析响应失败', icon: 'none' })
+              }
+            },
+            fail: () => {
+              uni.showToast({ title: '上传失败', icon: 'none' })
+            },
+            complete: () => {
+              uni.hideLoading()
             }
-            else {
-              uni.showToast({ title: parsed.message || '上传失败', icon: 'none' })
-            }
-          }
-          catch {
-            uni.showToast({ title: '解析响应失败', icon: 'none' })
-          }
+          })
         },
-        fail: () => {
-          uni.showToast({ title: '上传失败', icon: 'none' })
-        },
-        complete: () => {
-          uni.hideLoading()
-        }
       })
     }
   })
 }
-
-// 头像上传
-const src = ref<string>('') // 文件临时地址
-const originalFileName = ref<string>('') // 文件原始名
-const imgSrc = ref<string>('')
-// 裁切组件是否显示
-const show = ref<boolean>(false)
 
 // 统一的头像显示逻辑
 const displayAvatar = computed(() => {
-  // 优先显示上传后的头像，其次是用户信息中的头像，最后是默认头像
-  return imgSrc.value || userInfo.value?.avatar || '/static/images/default-avatar.png'
+  // 直接使用用户信息中的头像，如果没有则使用默认头像
+  return userInfo.value?.avatar || '/static/images/default-avatar.png'
 })
 
-function upload() {
-  // 检查登录状态
-  if (!hasLogin.value) {
-    uni.showModal({
-      title: '登录提示',
-      content: '请先登录后再上传头像',
-      confirmText: '去登录',
-      cancelText: '取消',
-      success: (res) => {
-        if (res.confirm) {
-          uni.navigateTo({
-            url: LOGIN_PAGE
-          })
-        }
-      }
-    })
-    return
-  }
-
-  uni.chooseImage({
-    count: 1,
-    sizeType: ['compressed'], // 压缩图片
-    sourceType: ['album', 'camera'],
-    success: (res) => {
-      const tempFilePath = res.tempFilePaths[0]
-      console.log('选择的图片:', res)
-      console.log('选择的图片名:', res.tempFiles[0].name)
-      console.log('选择的图片路径:', tempFilePath)
-
-      // 验证文件路径
-      if (!tempFilePath) {
-        uni.showToast({
-          title: '获取图片失败',
-          icon: 'error'
-        })
-        return
-      }
-      // 设置裁剪组件的图片源并显示裁剪界面
-      // 去掉文件后缀最后一个后缀，先根据.分成数组，去掉最后一个，再拼接起来
-      // 例如：yyy.xxx.jpg -> yyy.xxx
-      originalFileName.value = res.tempFiles[0].name.split('.').slice(0, -1).join('.')
-      src.value = tempFilePath
-      show.value = true
-    },
-    fail: () => {
-      uni.showToast({
-        title: '选择图片失败',
-        icon: 'error'
-      })
-    }
-  })
-}
-// base64 → blob
-function base64ToBlob(base64: string, mime = 'image/png') {
-  const bytes = window.atob(base64.split(',')[1])
-  const ab = new ArrayBuffer(bytes.length)
-  const ia = new Uint8Array(ab)
-  for (let i = 0; i < bytes.length; i++) ia[i] = bytes.charCodeAt(i)
-  return new Blob([ab], { type: mime })
-}
-async function handleConfirm(event: any) {
-  const tempFilePath = event.tempFilePath
-  //   console.log('裁剪确认，文件event:', event)
-  //   console.log('裁剪确认，文件路径:', tempFilePath)
-
-  if (!tempFilePath) {
-    uni.showToast({ title: '获取图片失败', icon: 'error' })
-    return
-  }
-
-  uni.showLoading({ title: '上传中...' })
-
-  try {
-    // 使用统一的兼容上传方法
-    const uploadResult = await uploadFile(tempFilePath, originalFileName.value || 'avatar')
-
-    const fullAvatarUrl = import.meta.env.VITE_SERVER_BASEURL + uploadResult.data.url
-    console.log('裁剪上传成功，完整URL:', fullAvatarUrl)
-
-    imgSrc.value = fullAvatarUrl
-
-    if (userStore.userInfo) {
-      userStore.userInfo.avatar = fullAvatarUrl
-      await userStore.updateUserInfo({
-        ...userStore.userInfo,
-        avatar: fullAvatarUrl
-      })
-    }
-
-    uni.hideLoading()
-    uni.showToast({ title: '头像上传成功', icon: 'success' })
-  }
-  catch (err: any) {
-    uni.hideLoading()
-    console.error('裁剪上传失败:', err)
-
-    const errorMessage = err instanceof Error ? err.message : '上传失败'
-    uni.showToast({
-      title: errorMessage,
-      icon: 'none',
-      duration: 3000
-    })
-
-    // 上传失败时，仍然显示裁剪后的图片作为预览
-    imgSrc.value = tempFilePath
-  }
-}
-function imgLoaderror(res) {
-  console.log('加载失败', res)
-}
-function imgLoaded(res) {
-  console.log('加载成功', res)
-}
-function handleCancel(event) {
-  console.log('取消', event)
-}
 // 用户等级、积分、优惠券（可以根据实际业务逻辑调整）
 const userLevel = ref('普通会员')
 const userPoints = ref(0)
@@ -368,10 +250,10 @@ const orderTypes = ref([
 // 功能菜单
 const menuGroups = ref<any[]>([
   [
-    { name: '意见反馈', icon: '💬', url: '/pages/feedback/index' },
-    { name: '客服中心', icon: '🎧', url: '/pages/service/index' },
-    { name: '关于我们', icon: 'ℹ️', url: '/pages/about/index' },
-    { name: '设置', icon: '⚙️', url: '/pages/my/setting', badge: '' }
+    { name: '意见反馈', icon: 'i-carbon-chat-bot', url: '/pages/feedback/index' },
+    { name: '客服中心', icon: 'i-carbon-customer-service', url: '/pages/service/index', badge: '' },
+    { name: '关于我们', icon: 'i-carbon-information-filled text-blue', url: '/pages/about/index' },
+    { name: '设置', icon: 'i-carbon-settings', url: '/pages/my/setting', badge: '' }
   ]
 ])
 
@@ -632,13 +514,31 @@ const addLogoutMenuItem = () => {
     if (!hasLogoutItem) {
       menuGroups.value[0].push({
         name: '退出登录',
-        icon: '🚪',
+        icon: 'i-carbon-logout',
         url: '',
         action: logout
       })
     }
   }
 }
+
+const removeLogoutMenuItem = () => {
+  if (menuGroups.value[0]) {
+    const index = menuGroups.value[0].findIndex(item => item.name === '退出登录')
+    if (index !== -1) {
+      menuGroups.value[0].splice(index, 1)
+    }
+  }
+}
+// 监听登录状态变化，动态增删“退出登录”菜单项
+watch(hasLogin, (val) => {
+  if (val) {
+    addLogoutMenuItem()
+  }
+  else {
+    removeLogoutMenuItem()
+  }
+})
 
 // 监听收藏状态变化的全局事件
 const handleFavoriteChange = () => {
@@ -662,8 +562,13 @@ const handlePageFocus = () => {
 onMounted(() => {
   // 初始化封面为当前用户的 bg_cover
   coverUrl.value = userInfo.value?.bg_cover || ''
-  // 添加退出登录菜单
-  addLogoutMenuItem()
+  // 根据登录状态同步“退出登录”菜单项
+  if (hasLogin.value) {
+    addLogoutMenuItem()
+  }
+  else {
+    removeLogoutMenuItem()
+  }
 
   // 注册全局事件监听（先移除再注册，避免重复）
   uni.$off('favoriteChanged', handleFavoriteChange)
@@ -689,7 +594,8 @@ onUnmounted(() => {
   padding: 0rpx !important;
   background-color: #f5f5f4;
   // background-color: #ffffff;
-  min-height: 100vh;
+  min-height: 90vh;
+  overflow: scroll;
 }
 
 /* 顶部展示图片 */
@@ -897,8 +803,9 @@ onUnmounted(() => {
 }
 
 .menu-icon {
-  font-size: 36rpx;
-  margin-right: 24rpx;
+  font-size: 26rpx;
+  margin-top: 6rpx;
+  margin-right: 14rpx;
 }
 
 .menu-text {

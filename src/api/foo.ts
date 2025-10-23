@@ -185,12 +185,13 @@ export const uploadFile = async (filePath: string, name: string = 'file') => {
       name: 'file',
       success: (res) => {
         console.log('小程序上传成功:', res)
+        const data = JSON.parse(res.data)
         try {
-          const data = JSON.parse(res.data)
-          resolve({ data })
+          console.log('小程序上传成功111:', data)
+          resolve(data)
         }
         catch (error) {
-          resolve({ data: res.data })
+          resolve(data)
         }
       },
       fail: (error) => {

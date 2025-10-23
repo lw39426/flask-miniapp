@@ -17,14 +17,7 @@
         个人信息
       </view>
       <view class="setting-list">
-        <view class="setting-item" @tap="goToProfile">
-          <view class="item-label">
-            修改个人资料
-          </view>
-          <view class="item-content">
-            <text class="item-arrow">></text>
-          </view>
-        </view>
+        <sar-list-item hover arrow title="修改个人资料" @tap="goToProfile" />
       </view>
     </view>
 
@@ -35,41 +28,13 @@
       </view>
       <view class="setting-list">
         <!-- 收货地址 -->
-        <view class="setting-item" @tap="goToAddress">
-          <view class="item-label">
-            收货地址管理
-          </view>
-          <view class="item-content">
-            <text class="item-arrow">></text>
-          </view>
-        </view>
+        <sar-list-item hover arrow title="收货地址管理" @tap="goToAddress" />
         <!-- 账号管理 -->
-        <view class="setting-item" @tap="goToAccountManagement">
-          <view class="item-label">
-            账号管理
-          </view>
-          <view class="item-content">
-            <text class="item-arrow">></text>
-          </view>
-        </view>
+        <sar-list-item hover arrow title="账号管理" @tap="goToAccountManagement" />
         <!-- 隐私设置 -->
-        <view class="setting-item" @tap="goToPrivacy">
-          <view class="item-label">
-            隐私设置
-          </view>
-          <view class="item-content">
-            <text class="item-arrow">></text>
-          </view>
-        </view>
+        <sar-list-item hover arrow title="隐私设置" @tap="goToPrivacy" />
         <!-- 通知设置 -->
-        <view class="setting-item" @tap="goToNotification">
-          <view class="item-label">
-            通知设置
-          </view>
-          <view class="item-content">
-            <text class="item-arrow">></text>
-          </view>
-        </view>
+        <sar-list-item hover arrow title="通知设置" @tap="goToNotification" />
       </view>
     </view>
 
@@ -80,39 +45,17 @@
       </view>
       <view class="setting-list">
         <!-- 关于我们 -->
-        <view class="setting-item" @tap="goToAbout">
-          <view class="item-label">
-            关于我们
-          </view>
-          <view class="item-content">
-            <text class="item-arrow">></text>
-          </view>
-        </view>
+        <sar-list-item hover arrow title="关于我们" @tap="goToAbout" />
         <!-- 意见反馈 -->
-        <view class="setting-item" @tap="goToFeedback">
-          <view class="item-label">
-            意见反馈
-          </view>
-          <view class="item-content">
-            <text class="item-arrow">></text>
-          </view>
-        </view>
+        <sar-list-item hover arrow title="意见反馈" @tap="goToFeedback" />
         <!-- 检查更新 -->
-        <view class="setting-item" @tap="checkUpdate">
-          <view class="item-label">
-            检查更新
-          </view>
-          <view class="item-content">
-            <text class="item-value">v1.0.0</text>
-            <text class="item-arrow">></text>
-          </view>
-        </view>
+        <sar-list-item hover arrow title="检查更新" value="v1.0.0" @tap="checkUpdate" />
       </view>
     </view>
 
     <!-- 退出登录按钮 -->
     <view class="logout-button-container">
-      <sar-button type="pale" block @click="confirmLogout">
+      <sar-button block @click="confirmLogout">
         退出登录
       </sar-button>
     </view>
@@ -198,71 +141,39 @@ const confirmLogout = () => {
   position: sticky;
   top: 0;
   z-index: 100;
+}
 
-  .nav-left,
-  .nav-right {
-    width: 60rpx;
-    height: 60rpx;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .nav-title {
-    font-size: 32rpx;
-    font-weight: 500;
-  }
-  .nav-icon {
-    font-size: 36rpx;
-  }
+.nav-left,
+.nav-right {
+  width: 60rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-title {
+  font-size: 32rpx;
+  font-weight: 500;
+}
+
+.nav-icon {
+  font-size: 36rpx;
 }
 
 .setting-section {
   margin-top: 20rpx;
+}
 
-  .section-title {
-    padding: 20rpx 30rpx 10rpx;
-    font-size: 24rpx;
-    color: #999;
-    background-color: transparent;
-  }
+.section-title {
+  padding: 20rpx 30rpx 10rpx;
+  font-size: 24rpx;
+  color: #999;
+  background-color: transparent;
 }
 
 .setting-list {
   background-color: #fff;
-}
-
-.setting-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 30rpx;
-  border-bottom: 1rpx solid #f0f0f0;
-  font-size: 28rpx;
-
-  &:last-child {
-    border-bottom: none;
-  }
-
-  .item-label {
-    color: #333;
-  }
-
-  .item-content {
-    display: flex;
-    align-items: center;
-    color: #666;
-  }
-
-  .item-value {
-    margin-right: 20rpx;
-    font-size: 24rpx;
-    color: #999;
-  }
-
-  .item-arrow {
-    font-size: 24rpx;
-    color: #999;
-  }
 }
 
 .logout-button-container {

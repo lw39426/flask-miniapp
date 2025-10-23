@@ -182,7 +182,7 @@ const goToLogin = () => {
           <input
             v-model="form.password"
             class="input"
-            :type="(passwordVisible ? 'text' : 'password') as any"
+            :type="((passwordVisible ? 'text' : 'password') as any)"
             placeholder="请输入密码"
             placeholder-class="placeholder"
           >
@@ -199,7 +199,7 @@ const goToLogin = () => {
           <input
             v-model="form.confirmPassword"
             class="input"
-            :type="(confirmPasswordVisible ? 'text' : 'password') as any"
+            :type="((confirmPasswordVisible ? 'text' : 'password') as any)"
             placeholder="请再次输入密码"
             placeholder-class="placeholder"
           >
@@ -339,6 +339,7 @@ const goToLogin = () => {
 }
 
 .eye-icon {
+  padding: 0 20rpx;
   width: 40rpx;
   height: 40rpx;
 }
