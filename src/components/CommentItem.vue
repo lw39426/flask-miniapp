@@ -26,19 +26,15 @@
         <!-- 操作按钮 -->
         <view class="comment-meta">
           <text class="comment-time">{{ formatTime(comment.created_at) }}</text>
-          <text class="comment-time">回复</text>
+          <text class="comment-reply" @tap="handleReply">回复</text>
           <!-- <text class="like-icon" :class="{ liked: comment.is_liked }">点赞❤️</text> -->
-          <view class="like-inline" @tap="handleLike">
+          <view class="like-inline">
             <!-- 选项A：纯文本（默认启用） -->
-            <text class="like-icon" :class="{ liked: comment.is_liked }">{{ comment.is_liked ? '已赞❤️' : '点赞🤍' }}</text>
-            <text class="like-count">{{ comment.like_count }}</text>
-            <!-- 选项B：Wot-UI 图标（解注启用，需要 wot-design-uni） -->
-            <!--
-            <sar-icon :name="comment.is_liked ? 'like-fill' : 'like'"
-                     :color="comment.is_liked ? '#ff4757' : '#409eff'"
-                     size="20px" />
-            <text class="like-count">{{ comment.like_count }}</text>
-            -->
+            <text class="like-icon" :class="{ liked: comment.is_liked }" @tap="handleLike">
+              {{ comment.is_liked ? '已赞❤️' : '点赞🤍' }}{{ comment.like_count }}
+            </text>
+            <text v-if="canDelete" class="delete-link" @tap="handleDelete">删除</text>
+
             <!-- 选项C：uni-icons（解注启用，需要 @dcloudio/uni-ui 或内置 uni-icons 可用） -->
             <!--
             <uni-icons :type="comment.is_liked ? 'hand-up-filled' : 'hand-up'"
@@ -47,7 +43,6 @@
             <text class="like-count">{{ comment.like_count }}</text>
             -->
           </view>
-          <text v-if="canDelete" class="delete-link" @tap="handleDelete">删除</text>
         </view>
       </view>
     </view>
@@ -103,8 +98,22 @@ const isMine = computed(() => {
 
 // 格式化时间
 const formatTime = (timeString: string) => {
+  console.log('timeString', timeString)
+  let normalized = timeString.trim()
+  // iOS 兼容："yyyy-MM-dd HH:mm:ss" -> "yyyy/MM/dd HH:mm:ss"
+  if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}$/.test(normalized)) {
+    normalized = normalized?.replace(/-/g, '/')
+  }
+
+  let date = new Date(normalized)
+  // 兜底：尝试 ISO 格式 "yyyy-MM-ddTHH:mm:ss"
+  if (Number.isNaN(date.getTime())) {
+    const tIso = timeString.replace(' ', 'T')
+    date = new Date(tIso)
+  }
   const now = new Date()
-  const time = new Date(timeString)
+  const time = new Date(date)
+  console.log('time', time)
   const diff = now.getTime() - time.getTime()
 
   const minute = 60 * 1000
@@ -125,15 +134,11 @@ const formatTime = (timeString: string) => {
   else if (diff < week) {
     return `${Math.floor(diff / day)}天前`
   }
-  else if (diff < month) {
-    return `${Math.floor(diff / week)}周前`
-  }
+  // else if (diff < month) {
+  //   return `${Math.floor(diff / week)}周前`
+  // }
   else {
-    return time.toLocaleDateString('zh-CN', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    })
+    return timeString
   }
 }
 
@@ -227,7 +232,11 @@ const handleDelete = () => {
 }
 
 .comment-time {
-  width: 160rpx;
+  width: 40%;
+  font-size: 22rpx;
+  color: #999999;
+}
+.comment-reply {
   font-size: 22rpx;
   color: #999999;
 }
@@ -339,9 +348,10 @@ const handleDelete = () => {
 }
 
 .like-inline {
+  width: 30%;
   display: flex;
   align-items: center;
-  gap: 8rpx;
+  justify-content: space-between;
   padding: 0rpx 12rpx;
   border-radius: 20rpx;
   background: #f0f7ff;
@@ -350,15 +360,11 @@ const handleDelete = () => {
 .like-icon {
   font-size: 24rpx;
   color: #409eff;
+  margin-right: 10rpx;
 }
 
 .like-icon.liked {
   color: #ff4757;
-}
-
-.like-count {
-  font-size: 24rpx;
-  color: #409eff;
 }
 
 /* 新增：评论时间与删除在次行右侧展示 */
@@ -371,10 +377,6 @@ const handleDelete = () => {
 
 .delete-link {
   font-size: 22rpx;
-  color: #999999;
-}
-
-.delete-link:active {
   color: #ff4757;
 }
 </style>

@@ -36,7 +36,7 @@
         <view class="step-circle">
           3
         </view>
-        <text class="step-text">完成</text>
+        <text class="step-text">验证完成</text>
       </view>
     </view>
 
@@ -103,7 +103,7 @@
             <input
               v-model="form.newPassword"
               class="input"
-              :type="(newPasswordVisible ? 'text' : 'password') as any"
+              :type="((newPasswordVisible ? 'text' : 'password') as any)"
               placeholder="请输入新密码(6-16位)"
               placeholder-class="placeholder"
               :maxlength="16"
@@ -121,7 +121,7 @@
             <input
               v-model="form.confirmPassword"
               class="input"
-              :type="(confirmPasswordVisible ? 'text' : 'password') as any"
+              :type="((confirmPasswordVisible ? 'text' : 'password') as any)"
               placeholder="请再次输入新密码"
               placeholder-class="placeholder"
               :maxlength="16"
@@ -132,10 +132,14 @@
               @tap="toggleConfirmPasswordVisibility"
             />
           </view>
-
-          <button class="next-btn" @tap="resetPassword">
-            重置密码
-          </button>
+          <view class="button-group">
+            <button class="next-btn" @tap="goBack">
+              上一步
+            </button>
+            <button class="next-btn" @tap="resetPassword">
+              重置密码
+            </button>
+          </view>
         </view>
       </view>
 
@@ -160,7 +164,7 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
-import { resetPasswordApi, sendResetPasswordCode, verifyResetCode } from '@/api/login'
+import { sendResetPasswordCode } from '@/api/login'
 
 definePage({
   style: {
@@ -175,7 +179,7 @@ const currentStep = ref(1)
 
 // 表单数据
 const form = reactive({
-  phone: '',
+  phone: '16670020509',
   code: '',
   newPassword: '',
   confirmPassword: '',
@@ -276,13 +280,16 @@ const verifyPhone = async () => {
 
   try {
     uni.showLoading({ title: '验证中...' })
-    const result = await verifyResetCode({
-      phone: form.phone,
-      code: form.code,
-    })
+    // const result = await verifyResetCode({
+    //   phone: form.phone,
+    //   code: form.code,
+    // })
+    const result = {
+      data: { resetToken: '123' }
+    }
 
     // 保存重置令牌
-    form.resetToken = result.data.resetToken
+    form.resetToken = result?.data?.resetToken || ''
 
     uni.hideLoading()
     currentStep.value = 2
@@ -292,6 +299,7 @@ const verifyPhone = async () => {
     uni.showToast({
       title: error?.message || '验证失败，请重试',
       icon: 'none',
+      duration: 3000
     })
   }
 }
@@ -333,10 +341,10 @@ const resetPassword = async () => {
 
   try {
     uni.showLoading({ title: '重置中...' })
-    await resetPasswordApi({
-      resetToken: form.resetToken,
-      newPassword: form.newPassword,
-    })
+    // await resetPasswordApi({
+    //   resetToken: form.resetToken,
+    //   newPassword: form.newPassword,
+    // })
 
     uni.hideLoading()
     currentStep.value = 3
@@ -496,7 +504,7 @@ const goToLogin = () => {
 }
 
 .step-header {
-  text-align: center;
+  text-align: left;
   margin-bottom: 40rpx;
 }
 
@@ -530,7 +538,7 @@ const goToLogin = () => {
 .label {
   font-size: 30rpx;
   color: #333;
-  width: 120rpx;
+  width: 130rpx;
 }
 
 .input {
@@ -558,11 +566,17 @@ const goToLogin = () => {
 }
 
 .eye-icon {
+  padding: 0 20rpx;
   width: 40rpx;
   height: 40rpx;
 }
 
 /* 按钮 */
+.button-group {
+  display: flex; /* 1. 启用 Flexbox 布局 */
+  justify-content: space-between; /* 2. 可选：让按钮两端对齐，中间有空隙 */
+  gap: 20rpx; /* 3. (推荐) 更现代的方式：直接设置元素间距 */
+}
 .next-btn {
   width: 100%;
   height: 88rpx;

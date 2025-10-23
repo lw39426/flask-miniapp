@@ -10,14 +10,16 @@
     <view v-if="currentUser && !isProduct" class="comment-form">
       <view class="form-header">
         <image class="user-avatar" :src="currentUser.avatar" mode="aspectFill" />
-        <text class="form-title">{{ replyTarget ? `回复 @${replyTarget.user_nickname}` : '发表评论' }}</text>
+        <text class="form-title">
+          {{ replyTarget ? `回复 @${replyTarget.user_nickname}` : '发表评论' }}
+        </text>
         <text v-if="replyTarget" class="cancel-reply" @tap="cancelReply">取消</text>
       </view>
 
       <textarea
         v-model="commentContent"
         class="comment-input"
-        :placeholder="replyTarget ? `回复 @${replyTarget.user_nickname}` : '写下你的评论...'"
+        :placeholder="(replyTarget ? `回复 @${replyTarget.user_nickname}` : '写下你的评论...')"
         :maxlength="500"
         auto-height
       />
@@ -63,8 +65,8 @@
 
     <!-- 回复弹窗（Wot-UI） -->
     <sar-popup
-      v-model="showReplyPopup"
-      position="bottom"
+      :visible="showReplyPopup"
+      effect="slide-bottom"
       :safe-area-inset-bottom="true"
       :close-on-click-modal="true"
     >
@@ -76,6 +78,7 @@
         <textarea
           v-model="commentContent"
           class="reply-textarea"
+          :focus="replyFocus"
           :placeholder="replyTarget ? `回复 @${replyTarget.user_nickname}` : '写下你的评论...'"
           :maxlength="500"
           auto-height
@@ -110,7 +113,7 @@
 
 <script lang="ts" setup>
 import type { Comment, CommentListResponse, CommentStatistics } from '@/api/comment'
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { commentAPI } from '@/api/comment'
 import CommentItem from './CommentItem.vue'
 
@@ -141,6 +144,7 @@ const submitting = ref(false)
 const commentContent = ref('')
 const replyTarget = ref<Comment | null>(null)
 const showReplyPopup = ref(false)
+const replyFocus = ref(false)
 
 // 点赞节流（前沿触发）：250ms 内忽略重复点击
 const likeCooldown = new Map<number, number>()
@@ -149,7 +153,7 @@ const likeCooldown = new Map<number, number>()
 const currentPage = computed(() => pagination.value?.page || 1)
 const isProduct = computed(() => props.productId != null && props.articleId == null)
 
-// 加载评论列表
+// 加载评论列表，默认从第一页开始，append是否加载更多
 const loadComments = async (page = 1, append = false) => {
   try {
     if (page === 1) {
@@ -287,21 +291,30 @@ const handleReply = (comment: Comment) => {
   // 未登录先去登录
   if (!props.currentUser) {
     uni.showToast({ title: '请先登录', icon: 'none' })
-    uni.navigateTo({ url: '/pages/login/index' })
+    uni.navigateTo({ url: '/pages/login/login' })
     return
   }
   replyTarget.value = comment
-  // 打开底部弹窗输入
+  // 打开底部弹窗输入并聚焦
   showReplyPopup.value = true
+  nextTick(() => {
+    replyFocus.value = false
+    setTimeout(() => {
+      replyFocus.value = true
+    }, 10)
+  })
 }
 
 // 取消回复
 const cancelReply = () => {
   replyTarget.value = null
   commentContent.value = ''
+  replyFocus.value = false
 }
 const closeReplyPopup = () => {
+  commentContent.value = ''
   showReplyPopup.value = false
+  replyFocus.value = false
 }
 
 // 处理点赞
@@ -376,13 +389,16 @@ const handleDelete = async (comment: Comment) => {
   }
 
   try {
-    await uni.showModal({
+    const resDelete = await uni.showModal({
       title: '确认删除',
       content: '确定要删除这条评论吗？',
       confirmText: '删除',
       confirmColor: '#ff4757'
     })
-
+    console.log('删除评论确认：', resDelete)
+    if (resDelete.cancel) {
+      return
+    }
     await commentAPI.deleteComment(comment.id)
 
     // 重新加载评论列表和统计

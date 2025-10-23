@@ -136,7 +136,8 @@ export function getCategories(): Promise<Category[]> {
  * @param {PaginationParams} params - 分页参数
  */
 export function getCategoryProducts(categoryId: number, params: PaginationParams): Promise<ApiResponse<PaginatedData<Product>>> {
-  return http.get<ApiResponse<PaginatedData<Product>>>(`${BASE_URL}/home/category/${categoryId}/products`, { params })
+  console.log('实际发出的 params：', params)
+  return http.get<ApiResponse<PaginatedData<Product>>>(`${BASE_URL}/home/category/${categoryId}/products`, params)
 }
 
 /**
@@ -144,7 +145,7 @@ export function getCategoryProducts(categoryId: number, params: PaginationParams
  * @param {PaginationParams} params - 分页参数
  */
 export function getHotProducts(params: PaginationParams): Promise<PaginatedData<Product>> {
-  return http.get<PaginatedData<Product>>(`${BASE_URL}/home/hot-products`, { params })
+  return http.get<PaginatedData<Product>>(`${BASE_URL}/home/hot-products`, params)
 }
 
 /**
@@ -152,5 +153,5 @@ export function getHotProducts(params: PaginationParams): Promise<PaginatedData<
  * @param {PaginationParams & { category_id?: number }} params
  */
 export function getArticles(params: PaginationParams & { category_id?: number }): Promise<PaginatedData<Article>> {
-  return http.get<PaginatedData<Article>>(`${BASE_URL}/home/articles`, { params })
+  return http.get<PaginatedData<Article>>(`${BASE_URL}/home/articles`, params)
 }

@@ -20,7 +20,7 @@
         <!-- 文章元信息 -->
         <view class="article-meta">
           <view class="meta-left">
-            <text class="article-author">{{ article.author?.nickname || 'Mrmao' }}</text>
+            <text class="article-author">{{ (article.author as any)?.nickname || '匿名' }}</text>
             <text class="article-date">{{ formatDate(article.published_date) }}</text>
           </view>
           <view class="meta-right">
@@ -126,6 +126,7 @@ import { useUserStore } from '@/store/user'
 // 扩展 Article 类型以包含点赞数
 interface ExtendedArticle extends Article {
   likes?: number
+  nickname?: string
 }
 
 definePage({
@@ -168,11 +169,45 @@ const processedContent = computed(() => {
   return article.value.content
 })
 
-// 格式化日期
-const formatDate = (dateString: string) => {
+/**
+ * 格式化日期（iOS 兼容）
+ * 兼容 "yyyy-MM-dd HH:mm:ss" -> "yyyy/MM/dd HH:mm:ss"
+ * 若仍不支持，退化为 ISO "yyyy-MM-ddTHH:mm:ss"
+ */
+const formatDate = (dateString: string | number) => {
   if (!dateString)
     return ''
-  const date = new Date(dateString)
+  let date: Date
+
+  if (typeof dateString === 'number') {
+    // 时间戳（毫秒/秒）兼容
+    const ts = dateString > 1e12 ? dateString : dateString * 1000
+    date = new Date(ts)
+  }
+  else {
+    let ds = String(dateString).trim()
+
+    // 情况1：常见 "yyyy-MM-dd HH:mm:ss" 改为 "yyyy/MM/dd HH:mm:ss"（iOS支持）
+    if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}(?:\d{2})?$/.test(ds)) {
+      ds = ds.replace(/-/g, '/')
+    }
+
+    let d = new Date(ds)
+
+    // 情况2：如果替换后仍解析失败，尝试 ISO 格式 "yyyy-MM-ddTHH:mm:ss"
+    if (Number.isNaN(d.getTime())) {
+      if (ds.includes(' ')) {
+        ds = ds.replace(' ', 'T')
+      }
+      d = new Date(ds)
+    }
+
+    date = d
+  }
+  console.log('iOS 支持的时间格式:', date)
+  if (Number.isNaN(date.getTime()))
+    return ''
+
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
@@ -408,7 +443,8 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20rpx 32rpx;
+  padding: var(--status-bar-height) 32rpx 10rpx;
+  /* padding: 30rpx 32rpx 10rpx; */
   background: #ffffff;
   box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
   position: fixed;
@@ -416,7 +452,7 @@ onMounted(() => {
   left: 0;
   right: 0;
   z-index: 100;
-  height: 88rpx;
+  height: 90rpx;
 }
 
 .nav-back {
@@ -424,7 +460,7 @@ onMounted(() => {
   height: 60rpx;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 .back-icon {

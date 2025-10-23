@@ -51,10 +51,11 @@
             />
             <!-- 文字角标 -->
             <view
+              v-if="item.tags && item.tags.length > 0"
               class="corner-text-flag"
-              :style="item.tags && item.tags.length ? { backgroundColor: item.tags[0].color } : {}"
+              :style="{ backgroundColor: item.tags[0].color }"
             >
-              {{ item.tags && item.tags.length ? (item.tags[0]?.name || '') : '' }}
+              {{ (item.tags[0]?.name || '') }}
             </view>
             <!-- 图片角标 -->
             <image
@@ -290,7 +291,7 @@ const onImageError = (event: any) => {
   }
 }
 
-// 模拟加载分类商品数据
+// 加载分类商品数据
 const loadCategoryProducts = async (categoryId: number) => {
   loading.value = true
 
@@ -627,8 +628,8 @@ onMounted(() => {
   left: 0;
   background: #ff4141;
   color: #fff;
-  font-size: 20rpx;
-  padding: 6rpx 8rpx;
+  font-size: 24rpx;
+  padding: 8rpx 8rpx;
   border-radius: 0 0 12rpx 0;
 }
 

@@ -8,7 +8,7 @@
         </swiper-item>
       </swiper>
       <!-- 搜索栏 -->
-      <view class="immersive-search">
+      <view :style="{ top: `${safeAreaTop + 30}rpx` }" class="immersive-search">
         <view class="search-box" @tap="goToSearch">
           <text class="search-icon">🔍</text>
           <text class="search-placeholder">搜商品/品牌/活动</text>
@@ -20,7 +20,7 @@
     <!-- 问候条（黑色） -->
     <view class="greet-section">
       <view class="greet-left">
-        <image class="greet-avatar" src="/static/images/avatar-default.png" mode="aspectFill" />
+        <image class="greet-avatar" src="/static/images/default-avatar.svg" mode="aspectFill" />
         <view class="greet-texts">
           <text class="greet-hey">Hey，来跟幸运打个招呼</text>
           <text class="greet-level">Lv1 小蓝鹿</text>
@@ -83,7 +83,8 @@
           <view class="article-content">
             <text :text="article.title" :lines="1" color="#000" bold size="16px" />
             <text :text="article.description" :lines="2" color="#000" size="12px" />
-            <!-- <text class="article-summary">{{ article.description || '暂无摘要' }}</text> -->
+            <text class="article-title">{{ article.title || '暂无摘要' }}</text>
+            <text class="article-summary">{{ article.description || '暂无摘要' }}</text>
             <view class="article-footer">
               <text class="article-author">{{ article.author || 'Anonymous' }}</text>
               <text class="article-stats">{{ formatDate(article.published_date) }}</text>
@@ -142,7 +143,7 @@ const formatDate = (dateStr: string) => {
 
   // iOS 兼容："yyyy-MM-dd HH:mm:ss" -> "yyyy/MM/dd HH:mm:ss"
   if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}$/.test(normalized)) {
-    normalized = normalized.replace(/-/g, '/')
+    normalized = normalized?.replace(/-/g, '/')
   }
 
   let date = new Date(normalized)
@@ -282,8 +283,11 @@ const loadHomeData = async () => {
     uni.showToast({ title: e?.message || '首页数据获取失败', icon: 'none' })
   }
 }
-
+const safeAreaTop = ref(0)
 onMounted(() => {
+  const systemInfo = uni.getSystemInfoSync()
+  console.log('系统信息：', systemInfo)
+  safeAreaTop.value = systemInfo.safeAreaInsets.top // 获取安全区域顶部的内边距
   loadHomeData()
 })
 </script>
@@ -305,7 +309,7 @@ onMounted(() => {
 }
 .immersive-search {
   position: absolute;
-  top: calc(env(safe-area-inset-top, 0rpx) + 24rpx);
+  top: 0;
   left: 24rpx;
   right: 24rpx;
   display: flex;
@@ -319,7 +323,7 @@ onMounted(() => {
   align-items: center;
   background: rgba(255, 255, 255, 0.9);
   border-radius: 999rpx;
-  padding: 16rpx 24rpx;
+  padding: 20rpx 24rpx;
   margin-right: 16rpx;
   backdrop-filter: blur(6rpx);
 }
@@ -504,81 +508,11 @@ onMounted(() => {
   font-size: 36rpx;
   font-weight: 600;
   color: #2c2c2c;
+  border-left: 10rpx solid #e60000;
+  padding-left: 10rpx;
 }
 .section-more {
   font-size: 24rpx;
-  color: #666666;
-}
-
-/* 分类商品瀑布流 */
-.category-products-section {
-  margin-top: 32rpx;
-}
-
-.waterfall-container {
-  display: flex;
-  padding: 0 24rpx;
-  gap: 16rpx;
-}
-
-.waterfall-column {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.waterfall-item {
-  background: #ffffff;
-  border-radius: 16rpx;
-  overflow: hidden;
-  margin-bottom: 16rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
-}
-
-.waterfall-image {
-  width: 100%;
-  display: block;
-}
-
-.waterfall-info {
-  padding: 20rpx;
-}
-
-.waterfall-title {
-  font-size: 26rpx;
-  color: #2c2c2c;
-  font-weight: 500;
-  display: block;
-  margin-bottom: 12rpx;
-  line-height: 1.4;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-
-.waterfall-price-row {
-  display: flex;
-  align-items: center;
-  margin-bottom: 8rpx;
-}
-
-.waterfall-price {
-  font-size: 28rpx;
-  color: #e74c3c;
-  font-weight: 600;
-  margin-right: 12rpx;
-}
-
-.waterfall-original-price {
-  font-size: 22rpx;
-  color: #999999;
-  text-decoration: line-through;
-}
-
-.waterfall-sales {
-  font-size: 22rpx;
   color: #666666;
 }
 
@@ -626,17 +560,29 @@ onMounted(() => {
   height: 156rpx;
 }
 
-.article-summary {
-  font-size: 24rpx;
-  color: #666666;
+.article-title {
+  font-size: 26rpx;
+  font-weight: bold;
+  color: #323232;
   line-height: 1.5;
-  margin-bottom: 16rpx;
+  margin-bottom: 6rpx;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   flex: 1;
+}
+.article-summary {
+  font-size: 24rpx;
+  color: #666666;
+  line-height: 1.4;
+  margin-bottom: 16rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .article-footer {

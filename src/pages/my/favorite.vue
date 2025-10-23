@@ -342,7 +342,9 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20rpx 32rpx;
+  height: 88rpx;
+  padding: var(--status-bar-height) 30rpx 0;
+  /* padding: 20rpx 32rpx; */
   background: #ffffff;
   box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
 }
@@ -362,7 +364,7 @@ onMounted(() => {
 
 .nav-title {
   font-size: 32rpx;
-  font-weight: 600;
+  font-weight: 500;
   color: #2c2c2c;
 }
 

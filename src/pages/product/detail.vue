@@ -544,9 +544,10 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20rpx 32rpx;
+  padding: var(--status-bar-height) 32rpx 20rpx;
   background: #ffffff;
   box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+  height: 90rpx;
 }
 
 .nav-back {
@@ -554,7 +555,7 @@ onMounted(() => {
   height: 60rpx;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 .back-icon {

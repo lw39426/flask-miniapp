@@ -1,7 +1,7 @@
 <template>
   <view class="cart-page">
     <!-- 顶部导航栏 -->
-    <view class="cart-header">
+    <view :style="{ paddingTop: `${safeAreaTop + 30}rpx` }" class="cart-header">
       <text class="cart-title">购物车</text>
       <view v-if="!isEmpty" class="cart-actions">
         <text class="clear-btn" @tap="clearAllItems">清空</text>
@@ -32,12 +32,8 @@
     <!-- 商品列表 -->
     <scroll-view v-else scroll-y class="cart-items">
       <sar-swipe-action
-        v-for="(item, index) in cartItems" :key="item.id"
-        :options="swipeOptions"
-        :disabled="false"
-        :threshold="0.3"
-        :auto-close="true"
-        @click="handleSwipeClick($event, index)"
+        v-for="(item, index) in cartItems" :key="item.id" :options="swipeOptions" :disabled="false"
+        :threshold="0.3" :auto-close="true" @click="handleSwipeClick($event, index)"
       >
         <view class="cart-item">
           <image class="item-image" :src="getFullImageUrl(item.product_image)" mode="aspectFill" />
@@ -123,7 +119,7 @@ const hasLogin = computed(() => tokenStore.hasLogin)
 // 获取完整图片URL
 const getFullImageUrl = (imagePath: string) => {
   if (!imagePath)
-    return '/static/images/default-avatar.png'
+    return '/static/images/default-avatar.svg'
   if (imagePath.startsWith('http'))
     return imagePath
   return import.meta.env.VITE_SERVER_BASEURL + imagePath
@@ -372,8 +368,12 @@ const goToLogin = () => {
   })
 }
 
-// 生命周期
+const safeAreaTop = ref(0)
+// 页面加载时获取数据
 onMounted(() => {
+  const systemInfo = uni.getSystemInfoSync()
+  console.log('系统信息：', systemInfo)
+  safeAreaTop.value = systemInfo.safeAreaInsets.top // 获取安全区域顶部的内边距
   // 监听购物车变化事件
   uni.$on('cartChanged', loadCartItems)
 })
@@ -402,7 +402,7 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20rpx 30rpx;
+  padding: var(--status-bar-height) 30rpx 0;
   background-color: #5bcba9;
   color: #ffffff;
   height: 90rpx;
@@ -592,12 +592,12 @@ onUnmounted(() => {
 .cart-actions {
   display: flex;
   align-items: center;
+}
 
-  .clear-btn {
-    font-size: 28rpx;
-    color: #ff4757;
-    padding: 10rpx 20rpx;
-  }
+.clear-btn {
+  font-size: 28rpx;
+  color: #ff4757;
+  padding: 10rpx 20rpx;
 }
 
 .loading-container {
@@ -617,7 +617,7 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 400rpx;
+  height: 900rpx;
   padding: 40rpx;
   margin-top: 130rpx;
 
@@ -663,26 +663,32 @@ onUnmounted(() => {
 }
 
 .icon-delete:before {
-  content: '\e645'; /* 使用您的图标编码 */
+  content: '\e645';
+  /* 使用您的图标编码 */
 }
 
 .icon-star:before {
-  content: '\e611'; /* 使用您的图标编码 */
+  content: '\e611';
+  /* 使用您的图标编码 */
 }
 
 .icon-home:before {
-  content: '\e7a7'; /* 使用您的图标编码 */
+  content: '\e7a7';
+  /* 使用您的图标编码 */
 }
 
 .icon-category:before {
-  content: '\e62f'; /* 使用您的图标编码 */
+  content: '\e62f';
+  /* 使用您的图标编码 */
 }
 
 .icon-cart:before {
-  content: '\e698'; /* 使用您的图标编码 */
+  content: '\e698';
+  /* 使用您的图标编码 */
 }
 
 .icon-user:before {
-  content: '\e682'; /* 使用您的图标编码 */
+  content: '\e682';
+  /* 使用您的图标编码 */
 }
 </style>

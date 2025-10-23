@@ -62,6 +62,20 @@ export interface CommentListParams {
 }
 
 /**
+ * 将对象序列化为查询字符串（兼容小程序，无 URLSearchParams）
+ */
+const serializeQuery = (obj: Record<string, any>): string => {
+  const parts: string[] = []
+  Object.keys(obj).forEach((key) => {
+    const val = obj[key]
+    if (val === undefined || val === null || val === '')
+      return
+    parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(String(val))}`)
+  })
+  return parts.join('&')
+}
+
+/**
  * 评论 API 服务（复用 http/http.ts）
  */
 export class CommentAPI {
@@ -73,15 +87,8 @@ export class CommentAPI {
     articleId: number,
     params: CommentListParams = {}
   ): Promise<CommentListResponse> {
-    const query = new URLSearchParams()
-    query.append('page', String(params.page ?? 1))
-    query.append('per_page', String(params.per_page ?? 20))
-    query.append('sort_by', String(params.sort_by ?? 'created_at'))
-    query.append('order', String(params.order ?? 'desc'))
-
-    const url = `/api/comments/article/${articleId}${query.toString() ? `?${query.toString()}` : ''}`
-    const res = await http.get<ApiResponse<CommentListResponse>>(url)
-    console.log('11', res)
+    const url = `/api/comments/article/${articleId}`
+    const res = await http.get<ApiResponse<CommentListResponse>>(url, params)
     if (res && res.code === 200) {
       return (res as ApiResponse<CommentListResponse>).data
     }
@@ -148,12 +155,8 @@ export class CommentAPI {
     userId: number,
     params: { page?: number, per_page?: number } = {}
   ): Promise<CommentListResponse> {
-    const query = new URLSearchParams()
-    query.append('page', String(params.page ?? 1))
-    query.append('per_page', String(params.per_page ?? 20))
-
-    const url = `/api/comments/user/${userId}${query.toString() ? `?${query.toString()}` : ''}`
-    const res = await http.get<ApiResponse<CommentListResponse>>(url)
+    const url = `/api/comments/user/${userId}`
+    const res = await http.get<ApiResponse<CommentListResponse>>(url, params)
     if (res && (res as any).code === 200) {
       return (res as ApiResponse<CommentListResponse>).data
     }

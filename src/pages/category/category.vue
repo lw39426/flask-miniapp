@@ -1,7 +1,7 @@
 <template>
   <view class="category-page">
     <!-- 搜索栏 -->
-    <view class="search-header">
+    <view :style="{ paddingTop: `${safeAreaTop + 30}rpx` }" class="search-header">
       <view class="search-input-box" @tap="goToSearch">
         <text class="search-icon">🔍</text>
         <text class="search-placeholder">搜商品/品牌/活动</text>
@@ -278,8 +278,12 @@ const goToProduct = (product: Product) => {
   })
 }
 
+const safeAreaTop = ref(0)
 // 页面加载时获取数据
 onMounted(() => {
+  const systemInfo = uni.getSystemInfoSync()
+  console.log('系统信息：', systemInfo)
+  safeAreaTop.value = systemInfo.safeAreaInsets.top // 获取安全区域顶部的内边距
   loadCategories()
 })
 </script>
@@ -296,16 +300,17 @@ onMounted(() => {
 /* 搜索头部 */
 .search-header {
   background: #ffffff;
-  padding: 20rpx 32rpx;
+  padding: 0 32rpx;
+  /* padding: 20rpx 32rpx; */
   box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
 }
 
 .search-input-box {
   display: flex;
   align-items: center;
-  background: rgba(255, 255, 255, 0.9);
+  background: #e5e5e5;
   border-radius: 999rpx;
-  padding: 16rpx 24rpx;
+  padding: 20rpx 24rpx;
   backdrop-filter: blur(6rpx);
 }
 
