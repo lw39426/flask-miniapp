@@ -77,6 +77,7 @@
       <!-- 评论区域 -->
       <view class="comment-section">
         <CommentSystem
+          ref="commentRef"
           :article-id="articleId!"
           :current-user="currentUser"
           @update-stats="updateCommentStats"
@@ -116,6 +117,7 @@
 <script lang="ts" setup>
 import type { CommentStatistics } from '@/api/comment'
 import type { Article } from '@/api/home'
+import { onShow } from '@dcloudio/uni-app'
 import { computed, onMounted, ref } from 'vue'
 import { getArticleDetail } from '@/api/article'
 import { checkFavorite, FavoriteType, toggleFavorite as toggleFavoriteApi } from '@/api/favorite'
@@ -143,11 +145,13 @@ const isLiked = ref(false)
 const isFavorited = ref(false) // 收藏状态
 const articleId = ref<number>()
 const commentStats = ref<CommentStatistics>()
+const commentRef = ref<any>()
 const navTitle = ref('文章详情') // 导航栏标题
 const titleVisible = ref(true) // 文章标题是否可见
 
 // 获取token store
 const tokenStore = useTokenStore()
+const lastLogin = ref(tokenStore.hasLogin)
 
 const userStore = useUserStore()
 // 从用户状态管理中获取当前用户（未登录则为 null）
@@ -188,7 +192,7 @@ const formatDate = (dateString: string | number) => {
     let ds = String(dateString).trim()
 
     // 情况1：常见 "yyyy-MM-dd HH:mm:ss" 改为 "yyyy/MM/dd HH:mm:ss"（iOS支持）
-    if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}(?:\d{2})?$/.test(ds)) {
+    if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}(?::\d{2})?$/.test(ds)) {
       ds = ds.replace(/-/g, '/')
     }
 
@@ -289,9 +293,47 @@ const loadArticleDetail = async () => {
     navTitle.value = '文章详情'
     // 加载相关文章
     await loadRelatedArticles()
+    commentRef.value?.refresh?.()
   }
   catch (error) {
     console.error('获取文章详情失败:', error)
+    loading.value = false
+    //   article.value = {
+    //   "author": {
+    //     "avatar": "http://127.0.0.1:5050/static/temp/JOSggVOxfWlNd5J.thumb.1000_0.jpg",
+    //     "description": "ctO98WvOUD",
+    //     "id": 1,
+    //     "nickname": "\u54f2\u5f1f"
+    //   },
+    //   "category": {
+    //     "id": 12,
+    //     "name": "\u52a8\u6f2b\u5c0f\u8bf4"
+    //   },
+    //   "comment_count": null,
+    //   "comment_statistics": {
+    //     "reply_comments": 6,
+    //     "root_comments": 3,
+    //     "total_comments": 9,
+    //     "total_likes": "3"
+    //   },
+    //   "content": "<p><span style=\"color: rgb(51, 51, 51); background-color: rgb(255, 255, 255); font-size: 14px;\">\u52a8\u753b\u300a\u72d0\u5996\u5c0f\u7ea2\u5a18\u300b\u6539\u7f16\u81ea\u5c0f\u65b0\u521b\u4f5c\u7684\u540c\u540d\u6f2b\u753b\u4f5c\u54c1</span><span style=\"color: rgb(51, 51, 51); background-color: rgb(255, 255, 255); font-size: 14px;\"><sup><em> [1]</em></sup></span><span style=\"color: rgb(51, 51, 51); background-color: rgb(255, 255, 255); font-size: 14px;\">\u3002\u4f5c\u54c1\u4e3b\u8981\u8bb2\u8ff0\u4e86\u4ee5\u7ea2\u5a18\u4e3a\u804c\u4e1a\u7684\u72d0\u5996\u5728\u4e3a\u524d\u4e16\u604b\u4eba\u7275\u7ea2\u7ebf\u8fc7\u7a0b\u5f53\u4e2d\u53d1\u751f\u7684\u4e00\u7cfb\u5217\u6709\u8da3\u3001\u795e\u79d8\u7684\u6545\u4e8b</span><span style=\"color: rgb(51, 51, 51); background-color: rgb(255, 255, 255); font-size: 14px;\"><sup><em> [2]</em></sup></span><span style=\"color: rgb(51, 51, 51); background-color: rgb(255, 255, 255); font-size: 14px;\">\u3002</span></p><p><img src=\"https://pic.kts.g.mi.com/0b6f8c016b82e699588fe5a61f8685f99080080050210315033.png\" alt=\"\u72d0\u5996\u5c0f\u7ea2\u5a18\" data-href=\"\" style=\"\"/></p><p><strong>\u5386\u53f2</strong></p><p>\u300a\u72d0\u5996\u5c0f\u7ea2\u5a18\u300b\u662f\u4e2a\u5b8c\u5168\u67b6\u7a7a\u7684\u4e16\u754c\u3002</p><p>\u5f88\u4e45\u4ee5\u524d\uff0c\u4eba\u548c\u5996\u662f\u540c\u65f6\u671f\u8bde\u751f\u7684\u3002</p><p>\u4eba\u81ea\u8ba4\u4e3a\u662f\u4e07\u7269\u4e4b\u7075\uff0c\u800c\u5996\u4e5f\u8ba4\u4e3a\u81ea\u5df1\u662f\u5929\u751f\u7075\u7269\u3002</p><p>\u4eba\u7c7b\u5c06\u5996\u602a\u770b\u4f5c\u91ce\u517d\uff0c\u5996\u602a\u4e5f\u628a\u4eba\u7c7b\u770b\u4f5c\u52a8\u7269\uff0c\u6240\u4ee5\u96be\u514d\u53d1\u751f\u4e89\u7aef\u3002\u968f\u540e\uff0c\u4eba\u7c7b\u53d1\u73b0\u81ea\u5df1\u6253\u4e0d\u8fc7\u5996\u602a\uff0c\u5168\u529b\u4ee5\u8d74\u7684\u5996\u53d1\u73b0\u81ea\u5df1\u8eab\u4e0a\u6709\u4e00\u79cd\u795e\u79d8\u529b\u91cf\u3002\u4eba\u4eec\u79f0\u4e4b\u4e3a\u5996\u529b\u3002\u8fd9\u65f6\u5019\u9047\u89c1\u5996\u602a\uff0c\u4eba\u7c7b\u53ea\u80fd\u843d\u8352\u800c\u9003\u3002</p><p>\u4e0d\u8fc7\uff0c\u4eba\u4eec\u53d1\u73b0\u4e86\u80fd\u591f\u6297\u51fb\u5996\u602a\u7684\u4e1c\u897f\u2014\u2014\u6cd5\u5b9d\u3002</p><p>\u4eba\u7c7b\u53ef\u4ee5\u6b64\u6297\u51fb\u5996\u602a\u3002\u800c\u4e3a\u4e86\u5404\u81ea\u7684\u5229\u76ca\uff0c\u4eba\u548c\u5996\u8fdb\u5165\u4e86\u5168\u9762\u7684\u4ea4\u6218\u65f6\u4ee3\uff0c\u5929\u4e0b\u4e00\u7247\u8165\u98ce\u8840\u96e8\u3002</p><p>\u540e\u6765\uff0c\u5996\u754c\u548c\u4eba\u754c\u5404\u51fa\u73b0\u4e86\u4e00\u4f4d\u9886\u8896\uff0c\u4ed6\u4eec\u8ba4\u8bc6\u5230\u4e24\u754c\u65e9\u5df2\u538c\u5026\u8fd9\u79cd\u6beb\u65e0\u610f\u4e49\u7684\u6218\u6597\u3002\u4e8e\u662f\u6392\u9664\u4e07\u96be\uff0c\u4fc3\u4f7f\u4eba\u3001\u5996\u4e24\u754c\u7ed3\u6210\u4e86\u4e00\u4e2a\u548c\u5e73\u8054\u76df\uff0c\u4eba\u7c7b\u548c\u5996\u602a\u7ec8\u4e8e\u548c\u5e73\u5171\u5904\u3002<sup> [16]</sup></p><p><span style=\"color: rgb(44, 62, 80); background-color: rgba(255, 255, 255, 0.9); font-size: 14px;\">\u8fd9\u662f\u4e00\u4e2a\u4eba\u4e0e\u5996\u5171\u540c\u751f\u6d3b\uff0c\u53ef\u4ee5\u76f8\u604b\u3001\u76f8\u5b88\u7684\u4e16\u754c\u3002\u4f46\u4eba\u7684\u5bff\u547d\u767e\u5341\u5e74\uff0c\u5996\u7684\u5bff\u547d\u5343\u4e07\u5e74\uff0c\u5bff\u9650\u7684\u5dee\u8ddd\u8ba9\u5996\u53ea\u80fd\u770b\u7740\u81ea\u5df1\u7684\u604b\u4eba\u8001\u6b7b\u800c\u81ea\u5df1\u72ec\u6d3b\uff0c\u7a7a\u4f59\u60b2\u5207\u3002</span></p><p><span style=\"color: rgb(44, 62, 80); background-color: rgba(255, 255, 255, 0.9); font-size: 14px;\">\u4e3a\u4e86\u5f25\u8865\u8fd9\u4e00\u7f3a\u61be\uff0c\u5b9e\u529b\u5f3a\u5927\u7684\u6d82\u5c71\u72d0\u5996\u4e00\u65cf\u53d1\u660e\u4e86\u8f6c\u4e16\u7eed\u7f18\u7684\u6cd5\u672f\u2014\u2014\u53ea\u8981\u4eba\u4e0e\u5996\u5728\u82e6\u60c5\u5de8\u6811\u4e0b\u5171\u540c\u8bb8\u613f\uff0c\u5c31\u53ef\u4ee5\u7528\u5996\u7684\u529b\u91cf\u8ba9\u6b7b\u540e\u8f6c\u4e16\u7684\u4eba\u7c7b\u56de\u5fc6\u8d77\u81ea\u5df1\u7684\u90a3\u6bb5\u604b\u60c5\uff0c\u5bfb\u56de\u81ea\u5df1\u7684\u5f52\u5bbf\u3002\u4f5c\u4e3a\u604b\u60c5\u7684\u51ed\u8bc1\uff0c\u5de8\u6811\u4f1a\u5c06\u4eba\u5996\u5171\u540c\u6301\u6709\u7684\u201c\u6cd5\u5b9d\u201d\u4e00\u5206\u4e3a\u4e8c\uff0c\u5206\u522b\u5e26\u5728\u5996\u548c\u8f6c\u4e16\u4e4b\u540e\u7684\u4eba\u8eab\u4e0a\u3002\u800c\u8fd9\u6cd5\u5b9d\u6b63\u662f\u5f00\u542f\u4eba\u7c7b\u524d\u4e16\u8bb0\u5fc6\u7684\u94a5\u5319\u2014\u2014\u7eed\u7f18\u4e4b\u5319\u3002</span></p>",
+    //   "description": "\u52a8\u753b\u300a\u72d0\u5996\u5c0f\u7ea2\u5a18\u300b\u6539\u7f16\u81ea\u5c0f\u65b0\u521b\u4f5c\u7684\u540c\u540d\u6f2b\u753b\u4f5c\u54c1 [1]\u3002\u4f5c\u54c1\u4e3b\u8981\u8bb2\u8ff0\u4e86\u4ee5\u7ea2\u5a18\u4e3a\u804c\u4e1a\u7684\u72d0\u5996\u5728\u4e3a\u524d\u4e16\u604b\u4eba\u7275\u7ea2\u7ebf\u8fc7\u7a0b\u5f53\u4e2d\u53d1\u751f\u7684\u4e00\u7cfb\u5217\u6709\u8da3\u3001\u795e\u79d8\u7684\u6545\u4e8b",
+    //   "id": 23,
+    //   "image": "https://pic.kts.g.mi.com/0b6f8c016b82e699588fe5a61f8685f99080080050210315033.png",
+    //   "likes": null,
+    //   "published_date": "2025-09-15 22:26:16",
+    //   "tags": [
+    //     {
+    //       "color": "#ff4141",
+    //       "description": "",
+    //       "id": 7,
+    //       "name": "\u70ed\u95e8\u63a8\u8350"
+    //     }
+    //   ],
+    //   "title": "\u300a\u72d0\u5996\u5c0f\u7ea2\u5a18\u300b",
+    //   "update_date": "2025-10-23 18:40:56",
+    //   "views": 1604
+    // }
     uni.showToast({
       title: '获取文章详情失败',
       icon: 'error'
@@ -428,6 +470,16 @@ onMounted(() => {
   getPageParams()
   loadArticleDetail()
 })
+
+onShow(async () => {
+  // 从未登录返回后变为已登录，刷新页面数据
+  if (!lastLogin.value && tokenStore.hasLogin) {
+    await loadArticleDetail()
+    await checkFavoriteStatus()
+    await loadRelatedArticles()
+  }
+  lastLogin.value = tokenStore.hasLogin
+})
 </script>
 
 <style scoped>
@@ -493,7 +545,7 @@ onMounted(() => {
 /* 详情滚动区域 */
 .detail-scroll {
   flex: 1;
-  padding-top: 120rpx; /* 为固定导航栏留出空间 */
+  padding-top: 140rpx; /* 为固定导航栏留出空间 */
   padding-bottom: 120rpx;
 }
 

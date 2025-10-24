@@ -29,7 +29,7 @@
 <script lang="ts" setup>
 // 引入 sard-uniapp 的 cropImage 函数
 import { cropImage } from 'sard-uniapp'
-import { defineEmits, defineProps, ref, watch, withDefaults } from 'vue'
+import { ref, watch, withDefaults } from 'vue'
 // 引入上传API和Store
 import { uploadFile } from '@/api/foo'
 import { useTokenStore } from '@/store/token'
@@ -37,7 +37,7 @@ import { useUserStore } from '@/store/user'
 
 // --- Props ---
 interface Props {
-  defaultAvatar: string
+  defaultAvatar?: string
 }
 const props = withDefaults(defineProps<Props>(), {
   defaultAvatar: '/static/images/default-avatar.svg',

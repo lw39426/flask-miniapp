@@ -31,7 +31,7 @@ export function getCode(): Promise<ICaptcha> {
  * @param loginForm 登录表单
  */
 export function login(loginForm: ILoginForm): Promise<IAuthLoginRes> {
-  return http.post<ApiResponse<IAuthLoginRes>>('/miniapp/auth/login', loginForm).then((res) => {
+  return http.post<ApiResponse<IAuthLoginRes>>('/miniapp/auth/loginByUsername', loginForm).then((res) => {
     console.log('登录-res: ', res)
     if (res.code === 200) {
       return res.data
@@ -45,7 +45,7 @@ export function login(loginForm: ILoginForm): Promise<IAuthLoginRes> {
  * @param loginForm 登录表单
  */
 export function loginByPhone(loginForm: ILoginForm): Promise<IAuthLoginRes> {
-  return http.post<ApiResponse<IAuthLoginRes>>('/miniapp/auth/login', loginForm).then((res) => {
+  return http.post<ApiResponse<IAuthLoginRes>>('/miniapp/auth/loginByPhone', loginForm).then((res) => {
     console.log('登录-res: ', res)
     if (res.code === 200) {
       return res.data
@@ -99,7 +99,8 @@ export function updateUserPassword(data: IUpdatePassword) {
 
 /**
  * 微信登录
- * @param params 微信登录参数，包含code
+ * @param data 微信登录参数，包含code
+ * @param data.code  微信授权码
  * @returns Promise 包含登录结果
  */
 export function wxLogin(data: { code: string }) {

@@ -34,14 +34,6 @@
               {{ comment.is_liked ? '已赞❤️' : '点赞🤍' }}{{ comment.like_count }}
             </text>
             <text v-if="canDelete" class="delete-link" @tap="handleDelete">删除</text>
-
-            <!-- 选项C：uni-icons（解注启用，需要 @dcloudio/uni-ui 或内置 uni-icons 可用） -->
-            <!--
-            <uni-icons :type="comment.is_liked ? 'hand-up-filled' : 'hand-up'"
-                       :color="comment.is_liked ? '#ff4757' : '#409eff'"
-                       size="20" />
-            <text class="like-count">{{ comment.like_count }}</text>
-            -->
           </view>
         </view>
       </view>
@@ -65,6 +57,12 @@
 <script lang="ts" setup>
 import type { Comment } from '@/api/comment'
 import { computed } from 'vue'
+import CommentItem from './CommentItem.vue'
+
+defineOptions({ name: 'CommentItem' })
+const props = defineProps<Props>()
+
+const emit = defineEmits<Emits>()
 
 interface Props {
   comment: Comment
@@ -81,12 +79,15 @@ interface Emits {
   (e: 'delete', comment: Comment): void
 }
 
-const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
-
+// ❗️❗️❗️ 在这里添加这行关键的日志 ❗️❗️❗️
+console.log(
+  `[CommentItem] Rendering comment ID: ${props.comment.id}, `
+  + `Children count: ${props.comment.children?.length ?? 0}`,
+  props.comment // 打印完整的 comment 对象
+)
 // 计算属性
 const canDelete = computed(() => {
-  console.log('reply', props.currentUser)
+  // console.log('信息项', props.comment)
   if (!props.currentUser)
     return false
   return props.currentUser.id === props.comment.user_id
@@ -98,7 +99,7 @@ const isMine = computed(() => {
 
 // 格式化时间
 const formatTime = (timeString: string) => {
-  console.log('timeString', timeString)
+  // console.log('timeString', timeString)
   let normalized = timeString.trim()
   // iOS 兼容："yyyy-MM-dd HH:mm:ss" -> "yyyy/MM/dd HH:mm:ss"
   if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}$/.test(normalized)) {
@@ -113,7 +114,7 @@ const formatTime = (timeString: string) => {
   }
   const now = new Date()
   const time = new Date(date)
-  console.log('time', time)
+  // console.log('time', time)
   const diff = now.getTime() - time.getTime()
 
   const minute = 60 * 1000

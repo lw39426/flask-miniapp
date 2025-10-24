@@ -262,8 +262,15 @@ const handleSubmit = async () => {
       return
     }
 
-    console.log('执行账号密码登录:', { phone: form.username, password: form.password })
-    const res = await tokenStore.login(form)
+    console.log('执行账号密码登录:', { username: form.username, password: form.password })
+    const res = await tokenStore.login(
+      {
+        username: form.username,
+        password: form.password,
+        captcha: form.captcha,
+        captcha_key: form.captcha_key
+      }
+    )
     if (res) {
       uni.showToast({
         title: '登录成功',
