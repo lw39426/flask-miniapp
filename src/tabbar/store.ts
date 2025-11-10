@@ -7,7 +7,7 @@ import { useTokenStore } from '@/store/token'
 import { tabbarList as _tabbarList, customTabbarEnable } from './config'
 
 // TODO 1/2: 中间的鼓包tabbarItem的开关
-const BULGE_ENABLE = false
+const BULGE_ENABLE = true
 
 /** tabbarList 里面的 path 从 pages.config.ts 得到 */
 const tabbarList = reactive<CustomTabBarItem[]>(_tabbarList.map(item => ({
@@ -20,7 +20,9 @@ if (customTabbarEnable && BULGE_ENABLE) {
     console.error('有鼓包时 tabbar 数量必须是偶数，否则样式很奇怪！！')
   }
   tabbarList.splice(tabbarList.length / 2, 0, {
+    text: '扫一扫',
     isBulge: true,
+    bulgeImg: '/static/tabbar/scan.png'
   } as CustomTabBarItem)
 }
 
@@ -45,11 +47,13 @@ const tabbarStore = reactive({
       uni.setStorageSync('app-tabbar-index', idx)
     }
   },
+  // 设置 tabbar item 的 badge
   setTabbarItemBadge(idx: number, badge: CustomTabBarItemBadge) {
     if (tabbarList[idx]) {
       tabbarList[idx].badge = badge
     }
   },
+  // 根据 path 自动设置 curIdx
   setAutoCurIdx(path: string) {
     // '/' 当做首页
     if (path === '/') {
@@ -72,6 +76,7 @@ const tabbarStore = reactive({
       this.setCurIdx(index)
     }
   },
+  // 恢复到上一个 tabbar index
   restorePrevIdx() {
     if (this.prevIdx === this.curIdx)
       return

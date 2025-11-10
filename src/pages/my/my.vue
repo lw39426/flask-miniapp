@@ -7,7 +7,7 @@
         更换封面
       </view>
     </view>
-    <!--  登录面板——用户信息头部 -->
+    <!-- 登录面板——用户信息头部 -->
     <view class="profile-header">
       <!-- 用户信息区域 -->
       <view class="user-info">
@@ -92,7 +92,6 @@
         期待和你的每一次相遇 ^_^
       </view>
     </view>
-    <sar-crop-image-agent />
   </view>
 </template>
 
@@ -853,5 +852,19 @@ onUnmounted(() => {
   text-align: center;
   color: #aaa;
   font-size: 25rpx;
+}
+// SVGA动画容器样式
+.svga-box {
+  display: flex;
+  align-items: center;
+  color: var(--el-color-primary);
+  margin-right: 28px;
+  cursor: pointer;
+}
+.svga-player {
+  width: 36px;
+  height: 36px;
+  margin-bottom: 6px;
+  margin-right: 4px;
 }
 </style>

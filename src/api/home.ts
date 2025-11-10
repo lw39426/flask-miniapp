@@ -40,7 +40,8 @@ export interface Tag {
 export interface Banner {
   id: number
   title: string
-  image: string
+  image?: string
+  image_url?: string
   link_type: 'product' | 'page' | 'webview'
   link_value: number | string
   description?: string | null
@@ -119,8 +120,8 @@ export function getHomeData(): Promise<ApiResponse<HomeData>> {
 /**
  * @description 获取轮播图数据
  */
-export function getBanners(): Promise<Banner[]> {
-  return http.get<Banner[]>(`${BASE_URL}/banners`)
+export function getBanners(query): Promise<Banner[]> {
+  return http.get<Banner[]>(`${BASE_URL}/banners`, query)
 }
 
 /**

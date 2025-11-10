@@ -291,10 +291,9 @@ const handleSubmit = async () => {
   }
   catch (error) {
     // 统一处理登录失败
-    uni.showToast({
-      title: error?.message || '登录失败，请重试',
-      icon: 'error',
-      duration: 2500
+    toast(error?.message || '登录失败，请重试', {
+      type: 'fail',
+      timeout: 2500
     })
   }
 }
@@ -555,6 +554,7 @@ onLoad(() => {
 .login-page {
   display: flex;
   flex-direction: column;
+  justify-content: center;
   height: 100vh;
   background-color: #f8f9fa;
   overflow: hidden;
@@ -573,7 +573,7 @@ onLoad(() => {
 
 .logo {
   position: absolute;
-  top: 100rpx;
+  top: 140rpx;
   right: 40rpx;
   width: 180rpx;
   height: 180rpx;

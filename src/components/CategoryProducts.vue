@@ -315,7 +315,7 @@ const loadCategoryProducts = async (categoryId: number) => {
     // 加载失败时，演示使用---
     // 临时模拟数据，增加更多样化的商品
     const mockProducts: ProductWithHeight[] = Array.from({ length: 6 }, (_, index) => ({
-      id: categoryId * 100 + index,
+      id: 0 + index,
       name: `${currentCategoryName.value}商品 ${index + 1} - ${['精选', '热销', '新品', '限时', '特价', '推荐'][index] || '优质'}`,
       price: Math.floor(Math.random() * 200) + 50,
       sale_price: Math.floor(Math.random() * 150) + 30,

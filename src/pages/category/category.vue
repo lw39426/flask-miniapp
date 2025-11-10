@@ -286,6 +286,9 @@ onMounted(() => {
   safeAreaTop.value = systemInfo.safeAreaInsets.top // 获取安全区域顶部的内边距
   loadCategories()
 })
+onShow(() => {
+  loadCategories()
+})
 </script>
 
 <style scoped>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // i-carbon-code
+// i-carbon-shopping-cart
 import type { CustomTabBarItem } from './config'
 import { customTabbarEnable, needHideNativeTabbar, tabbarCacheEnable } from './config'
 import { tabbarList, tabbarStore } from './store'
@@ -16,7 +17,7 @@ defineOptions({
  */
 function handleClickBulge() {
   uni.showToast({
-    title: '点击了中间的鼓包tabbarItem',
+    title: '功能正在开发中.....点击了中间的鼓包tabbarItem',
     icon: 'none',
   })
 }
@@ -31,6 +32,7 @@ function handleClick(index: number) {
     return
   }
   const url = tabbarList[index].pagePath
+  // 记录当前点击的 tabbar 索引
   tabbarStore.setCurIdx(index)
   if (tabbarCacheEnable) {
     uni.switchTab({ url })
@@ -54,7 +56,7 @@ onLoad(() => {
   })
 })
 // #endif
-const activeColor = 'var(--wot-color-theme, #1890ff)'
+const activeColor = 'var(--wot-color-theme, #da2912)'
 const inactiveColor = '#666'
 function getColorByIndex(index: number) {
   return tabbarStore.curIdx === index ? activeColor : inactiveColor
@@ -82,9 +84,18 @@ function getImageByIndex(index: number, item: CustomTabBarItem) {
           <view v-if="item.isBulge" class="relative">
             <!-- 中间一个鼓包tabbarItem的处理 -->
             <view class="bulge">
-              <!-- TODO 2/2: 中间鼓包tabbarItem配置：通常是一个图片，或者icon，点击触发业务逻辑 -->
+              <!-- TODO 2/2: 中间鼓包./store.TS>tabbarItem配置：通常是一个图片，或者icon，点击触发业务逻辑 -->
               <!-- 常见的是：扫描按钮、发布按钮、更多按钮等 -->
-              <image class="mt-6rpx h-200rpx w-200rpx" src="/static/tabbar/scan.png" />
+              <!-- <image class="mt-6rpx h-200rpx w-200rpx" :src="item.bulgeImg" /> -->
+              <view
+                class="h-200rpx w-200rpx flex flex-col cursor-pointer items-center justify-center rounded-full bg-red transition-all"
+              >
+                <!-- 图标：用任意 icon 字体或 SVG -->
+                <view class="i-carbon-chat text-44px text-white" />
+
+                <!-- 文字 -->
+                <text class="text-18px text-white" />
+              </view>
             </view>
           </view>
           <view v-else class="relative px-3 text-center">
@@ -99,7 +110,7 @@ function getImageByIndex(index: number, item: CustomTabBarItem) {
               <view :class="item.icon" class="text-20px" />
             </template>
             <template v-if="item.iconType === 'image'">
-              <image :src="getImageByIndex(index, item)" mode="scaleToFill" class="h-20px w-20px" />
+              <image :src="getImageByIndex(index, item)" mode="scaleToFill" class="h-22px w-22px" />
             </template>
             <view class="mt-2px text-12px">
               {{ item.text }}

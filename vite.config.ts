@@ -140,6 +140,8 @@ export default defineConfig(({ command, mode }) => {
       // 自动打开开发者工具插件 (必须修改 .env 文件中的 VITE_WX_APPID)
       openDevTools(),
     ],
+    // 让 Vite 把 .svga 当静态资源，不再去解析成 JS 模块
+    assetsInclude: ['**/*.svga'],
     define: {
       __UNI_PLATFORM__: JSON.stringify(UNI_PLATFORM),
       __VITE_APP_PROXY__: JSON.stringify(VITE_APP_PROXY_ENABLE),

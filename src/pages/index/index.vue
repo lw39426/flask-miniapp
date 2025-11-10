@@ -4,7 +4,7 @@
     <view class="banner-section immersive">
       <swiper class="banner-swiper" indicator-dots circular autoplay :interval="3000" :duration="500">
         <swiper-item v-for="(banner, index) in banners" :key="index">
-          <image class="banner-image" :src="banner.image" mode="aspectFill" @tap="onBannerTap(banner)" />
+          <image class="banner-image" :src="banner?.image || banner?.image_url || ''" mode="aspectFill" @tap="onBannerTap(banner)" />
         </swiper-item>
       </swiper>
       <!-- 搜索栏 -->
@@ -54,17 +54,19 @@
 
     <!-- 宣传卡片功能导航 -->
     <view class="nav-section">
-      <swiper class="banner-swiper" circular :interval="3000" :duration="500">
+      <!-- <swiper class="banner-swiper" circular :interval="3000" :duration="500">
         <swiper-item v-for="(banner, index) in banners" :key="index">
-          <image class="banner-image" :src="banner.image" mode="aspectFill" @tap="onBannerTap(banner)" />
+          <image class="banner-image" :src="banner.image || banner?.image_url" mode="aspectFill" @tap="onBannerTap(banner)" />
         </swiper-item>
-      </swiper>
+      </swiper> -->
+      <view class="banner-swiper" circular :interval="3000" :duration="500">
+        <image class="banner-image" :src="banners[0]?.image || banners[0]?.image_url" mode="aspectFill" @tap="onBannerTap(banners[0])" />
+      </view>
     </view>
 
     <!-- 产品分类和商品组件 -->
     <CategoryProducts
-      v-if="navItems && navItems.length"
-      :categories="navItems"
+      :categories="navItems || []"
       :default-category-id="activeCategory || (navItems[0] && navItems[0].id)"
       @category-change="onCategoryChange"
       @product-click="goToProduct"
@@ -79,10 +81,10 @@
       </view>
       <view v-if="articles.length > 0" class="articles-list">
         <view v-for="(article, index) in articles" :key="index" class="article-item" @tap="goToArticle(article)">
-          <image class="article-cover" :src="article.image" mode="aspectFill" />
+          <image class="article-cover" :src="article?.image || ''" mode="aspectFill" />
           <view class="article-content">
-            <text :text="article.title" :lines="1" color="#000" bold size="16px" />
-            <text :text="article.description" :lines="2" color="#000" size="12px" />
+            <text :text="article.title || '暂无标题'" :lines="1" color="#000" bold size="16px" />
+            <text :text="article.description" class="h-auto" :lines="2" color="#000" size="12px" />
             <text class="article-title">{{ article.title || '暂无摘要' }}</text>
             <text class="article-summary">{{ article.description || '暂无摘要' }}</text>
             <view class="article-footer">
@@ -104,7 +106,7 @@
 <script lang="ts" setup>
 import type { Article, Banner, Product } from '@/api/home'
 import { onMounted, ref } from 'vue'
-import { getHomeData } from '@/api/home'
+import { getBanners, getHomeData } from '@/api/home'
 
 definePage({
   type: 'home',
@@ -188,7 +190,9 @@ const goToCategoryDetail = (categoryId: number | null) => {
 const loadHomeData = async () => {
   try {
     const res = await getHomeData()
-    banners.value = res.data.banners || [{
+    const bannersRes = await getBanners({ placement_key: 'home_top_banner' })
+    console.log('轮播数据加载结果：', bannersRes)
+    banners.value = (bannersRes as any).data.banners || [{
       id: null,
       title: '汤姆猫',
       image: 'https://n.sinaimg.cn/sinacn10110/335/w725h410/20191008/86e9-ifrwayw5825360.jpg',
@@ -288,6 +292,9 @@ onMounted(() => {
   const systemInfo = uni.getSystemInfoSync()
   console.log('系统信息：', systemInfo)
   safeAreaTop.value = systemInfo.safeAreaInsets.top // 获取安全区域顶部的内边距
+  loadHomeData()
+})
+onShow(() => {
   loadHomeData()
 })
 </script>

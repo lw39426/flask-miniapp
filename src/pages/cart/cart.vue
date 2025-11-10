@@ -1,12 +1,12 @@
 <template>
   <view class="cart-page">
     <!-- 顶部导航栏 -->
-    <view :style="{ paddingTop: `${safeAreaTop + 30}rpx` }" class="cart-header">
+    <!-- <view :style="{ paddingTop: `${safeAreaTop + 30}rpx` }" class="cart-header">
       <text class="cart-title">购物车</text>
       <view v-if="!isEmpty" class="cart-actions">
         <text class="clear-btn" @tap="clearAllItems">清空</text>
       </view>
-    </view>
+    </view> -->
 
     <!-- 加载状态 -->
     <view v-if="loading" class="loading-container">
@@ -15,7 +15,7 @@
 
     <!-- 空购物车状态 -->
     <view v-else-if="!hasLogin" class="empty-cart">
-      <text class="empty-text">请先登录</text>
+      <text class="empty-text">请先登录11</text>
       <view class="login-btn" @tap="goToLogin">
         去登录
       </view>
@@ -73,6 +73,9 @@
         </view>
         <text class="shipping-note">不含运费</text>
       </view>
+      <view v-if="!isEmpty" class="clear-btn" @tap="clearAllItems">
+        <text>清空</text>
+      </view>
       <view class="checkout-btn" @tap="checkout">
         结算
       </view>
@@ -100,8 +103,9 @@ import { useTokenStore } from '@/store/token'
 
 definePage({
   style: {
-    navigationStyle: 'custom',
+    navigationStyle: 'default',
     navigationBarTitleText: '购物车',
+    navigationBarBackgroundColor: '#5bcba9'
   },
 })
 
@@ -437,7 +441,7 @@ onUnmounted(() => {
 /* 商品列表 - 可滚动区域 */
 .cart-items {
   flex: 1;
-  padding-top: 140rpx;
+  padding-top: 30rpx;
   overflow-y: auto;
 }
 
@@ -580,8 +584,8 @@ onUnmounted(() => {
   }
 
   .checkout-btn {
-    background-color: #6b5cd6;
-    color: #ffffff;
+    background-color: #4ccca6;
+    color: #fff;
     padding: 20rpx 60rpx;
     border-radius: 40rpx;
     font-size: 30rpx;
@@ -595,9 +599,11 @@ onUnmounted(() => {
 }
 
 .clear-btn {
-  font-size: 28rpx;
-  color: #ff4757;
-  padding: 10rpx 20rpx;
+  background-color: #e64554;
+  color: #fff;
+  padding: 20rpx 60rpx;
+  border-radius: 40rpx;
+  font-size: 30rpx;
 }
 
 .loading-container {

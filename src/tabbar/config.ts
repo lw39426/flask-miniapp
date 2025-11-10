@@ -41,7 +41,7 @@ export const nativeTabbarList: NativeTabBarItem[] = [
   {
     iconPath: 'static/tabbar/example.png',
     selectedIconPath: 'static/tabbar/exampleHL.png',
-    pagePath: 'pages/about/about',
+    pagePath: 'pages/cart/cart',
     text: '关于',
   },
   {
@@ -63,18 +63,62 @@ export interface CustomTabBarItem {
   iconActive?: string // 只有在 image 模式下才需要，传递的是高亮的图片（PS： 不建议用 image 模式）
   badge?: CustomTabBarItemBadge
   isBulge?: boolean // 是否是中间的鼓包tabbarItem
+  bulgeImg?: string // 鼓包图片，仅在 isBulge 为 true 时有效
 }
 // TODO: 3/3. 使用 CUSTOM_TABBAR(2,3) 时，更新下面的 tabbar 配置
 // 如果需要配置鼓包，需要在 'tabbar/store.ts' 里面设置，最后在 `tabbar/index.vue` 里面更改鼓包的图片
-export const customTabbarList: CustomTabBarItem[] = [
+const _customTabbarListPng: CustomTabBarItem[] = [
   {
     text: '首页',
     pagePath: 'pages/index/index',
-    // 注意 unocss 图标需要如下处理：（二选一）
-    // 1）在fg-tabbar.vue页面上引入一下并注释掉（见tabbar/index.vue代码第2行）
-    // 2）配置到 unocss.config.ts 的 safelist 中
-    iconType: 'unocss',
-    icon: 'i-carbon-home',
+    // 使用 ‘image’时，需要配置 icon + iconActive 2张图片
+    iconType: 'image',
+    icon: '/static/tabbar/indexHome.png',
+    iconActive: '/static/tabbar/indexHome-active.png',
+    // badge: 'dot',
+  },
+  {
+    text: '分类',
+    pagePath: 'pages/category/category',
+    // 使用 ‘image’时，需要配置 icon + iconActive 2张图片
+    iconType: 'image',
+    icon: '/static/tabbar/category.png',
+    iconActive: '/static/tabbar/category-active.png',
+  },
+  {
+    text: '购物车',
+    pagePath: 'pages/cart/cart',
+    // 使用 ‘image’时，需要配置 icon + iconActive 2张图片
+    iconType: 'image',
+    icon: '/static/tabbar/cart.png',
+    iconActive: '/static/tabbar/cart-active.png',
+    // badge: 100,
+  },
+  {
+    pagePath: 'pages/my/my',
+    text: '个人中心',
+    // 使用 ‘image’时，需要配置 icon + iconActive 2张图片
+    iconType: 'image',
+    icon: '/static/tabbar/my.png',
+    iconActive: '/static/tabbar/my-active.png',
+    // badge: 100,
+  }
+]
+export const customTabbarList: CustomTabBarItem[] = [
+  // 自定义 tabbar 图片版
+  // ...customTabbarListPng,
+  // 自定义 tabbar unocss 图标版
+  {
+    text: '首页',
+    pagePath: 'pages/index/index',
+    // // 注意 unocss 图标需要如下处理：（二选一）
+    // // 1）在fg-tabbar.vue页面上引入一下并注释掉（见tabbar/index.vue代码第2行）
+    // // 2）配置到 unocss.config.ts 的 safelist 中
+    // iconType: 'unocss',
+    // icon: 'i-carbon-home',
+    iconType: 'image',
+    icon: '/static/tabbar/indexHome.png',
+    iconActive: '/static/tabbar/indexHome-active.png',
     // badge: 'dot',
   },
   {
@@ -84,14 +128,17 @@ export const customTabbarList: CustomTabBarItem[] = [
     // 1）在fg-tabbar.vue页面上引入一下并注释掉（见tabbar/index.vue代码第2行）
     // 2）配置到 unocss.config.ts 的 safelist 中
     iconType: 'unocss',
-    icon: 'i-carbon-code',
+    icon: 'i-carbon-category',
     // badge: 10,
   },
   {
-    pagePath: 'pages/cart/cart',
     text: '购物车',
+    pagePath: 'pages/cart/cart',
+    // 注意 unocss 图标需要如下处理：（二选一）
+    // 1）在fg-tabbar.vue页面上引入一下并注释掉（见tabbar/index.vue代码第2行）
+    // 2）配置到 unocss.config.ts 的 safelist 中
     iconType: 'unocss',
-    icon: 'i-carbon-user',
+    icon: 'i-carbon-shopping-cart',
     // badge: 100,
   },
   {
@@ -101,6 +148,7 @@ export const customTabbarList: CustomTabBarItem[] = [
     icon: 'i-carbon-user',
     // badge: 100,
   },
+
   // 其他类型演示
   // 1、uiLib
   // {
@@ -155,7 +203,7 @@ const _tabbar: TabBar = {
   // 只有微信小程序支持 custom。App 和 H5 不生效
   custom: selectedTabbarStrategy === TABBAR_STRATEGY_MAP.CUSTOM_TABBAR_WITH_CACHE,
   color: '#999999',
-  selectedColor: '#018d71',
+  selectedColor: '#da5151ff',
   backgroundColor: '#F8F8F8',
   borderStyle: 'black',
   height: '50px',

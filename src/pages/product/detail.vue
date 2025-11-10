@@ -14,7 +14,7 @@
       <view class="product-images">
         <swiper class="image-swiper" :indicator-dots="true" autoplay circular>
           <swiper-item v-for="(image, index) in productImages" :key="index">
-            <image class="swiper-image" :src="image" mode="aspectFit" />
+            <image class="swiper-image" :src="image || ''" mode="aspectFit" />
           </swiper-item>
         </swiper>
       </view>
@@ -169,7 +169,7 @@ const initPageData = (options: any) => {
   console.log('页面参数:', options)
 
   if (options.id) {
-    productId.value = Number.parseInt(options.id)
+    productId.value = Number.parseInt(options.id) || 1
     console.log('设置商品ID:', productId.value)
   }
   else {
@@ -199,6 +199,23 @@ const loadProductDetail = async () => {
   }
   catch (error) {
     console.error('获取商品详情失败:', error)
+    product.value = {
+      brand: '',
+      category_id: 1,
+      category_name: '动漫',
+      description: '名侦探柯南主角，工藤新一',
+      detail_html: '<h3><span style="font-size: 14px;">人物介绍</span></h3><p><span style="font-size: 14px;"><strong>工藤新一</strong></span><span style="font-size: 14px;">（日语：工藤新一）原是高中生侦探，后因被灌下APTX-4869 而身体缩小变成7岁小孩，因某些原因，便化名为**江户川柯南**（日语：江戸川コナン／えどがわ コナン</span><span style="font-size: 14px;"><sup> </sup></span><span style="font-size: 14px;">Edogawa Konan，是日本漫画家青山刚昌所创作的漫画作品《名侦探柯南》中的主人公。</span></p><p><img src="http://127.0.0.1:5050/static/temp/846e.png" alt="846e.png" data-href="http://127.0.0.1:5050/static/temp/846e.png" style="width: 100%;"/></p><h4><span style="font-size: 14px;">创造与构思</span></h4><p><span style="font-size: 14px;">将工藤新一变成一个小孩的想法，来源于《三毛猫福尔摩斯系列》的主角。青山刚昌的想法是，这只猫将表明解决此案件所需的关键证据。由孩子求助的新一所做的表演是为帮助周围的人进行调查。而新一的灵感来自于虚构的私家侦探工藤俊作。</span></p><p><span style="font-size: 14px;">工藤新一取自日本经典侦探连续剧《侦探物语》侦探物语的主角工藤俊作和日本科幻小说家星新一。 江户川柯南命名来源则取自日本推理小说 始祖 江户川乱步 和英国名推理小说家柯南·道尔。而青山透露过，他的责任编辑反对取“柯南”这个名字，因为与动画作品《未来少年柯南》中的主人公同名，并建议改名他为道尔。但青山坚持要使用柯南这个名字，认为它将会取代《未来少年柯南》。</span></p><p><span style="font-size: 14px;">在《绀青之拳》中，柯南化名为“亚瑟·平井”，同样取自这两位著名推理小说家。其中“平井”取自江户川乱步的本名平井太郎。</span></p><p><br></p>',
+      id: 15,
+      images: [
+        'https://i.pinimg.com/474x/5b/0f/be/5b0fbeb8beadac36e38fd1c2a50e1517.jpg',
+        'https://i.pinimg.com/474x/52/a6/ba/52a6bac6293a09e7d0d2c974a18b95ff.jpg',
+      ],
+      main_image: 'https://i.pinimg.com/474x/31/a4/5e/31a45e7d1a5ed54dc37481eb2d7b8aa3.jpg',
+      name: '工藤新一',
+      price: 0,
+      sales: 0,
+      stock: 2
+    }
     await uni.showToast({
       title: '获取商品详情失败',
       icon: 'error'
@@ -227,22 +244,6 @@ const decreaseQuantity = () => {
     quantity.value--
   }
 }
-
-/*
-// 测试购物车功能
-const testCartFunction = () => {
-  console.log('测试按钮被点击')
-  console.log('当前商品ID:', productId.value)
-  console.log('当前商品信息:', product.value)
-  console.log('登录状态:', tokenStore.hasLogin)
-
-  uni.showModal({
-    title: '测试信息',
-    content: `商品ID: ${productId.value}\n登录状态: ${tokenStore.hasLogin ? '已登录' : '未登录'}`,
-    showCancel: false
-  })
-}
-*/
 
 // 加入购物车
 const addToCart = async () => {

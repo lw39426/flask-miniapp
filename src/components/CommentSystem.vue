@@ -63,7 +63,7 @@
 
     <!-- 空状态 -->
     <view v-else-if="!loading" class="empty-comments">
-      <text class="empty-text">{{ isProduct ? '商品评论暂未开通，敬请期待' : '暂无评论，快来发表第一条评论吧~' }}</text>
+      <text class="empty-text">{{ isProduct ? '商品评论暂未开通，敬请期待 ^_^' : '暂无评论，快来发表第一条评论吧~' }}</text>
     </view>
 
     <!-- 回复弹窗（Wot-UI） -->
