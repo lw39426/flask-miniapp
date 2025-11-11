@@ -3,7 +3,7 @@
     <!-- 自定义导航栏 -->
     <view class="custom-nav">
       <view class="nav-left" @tap="goBack">
-        <text class="nav-icon">←</text>
+        <text class="nav-icon i-carbon-arrow-left" />
       </view>
       <view class="nav-title">
         个人资料
@@ -523,7 +523,7 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   height: 100rpx;
-  padding: var(--status-bar-height) 30rpx 0;
+  padding: var(--status-bar-height) 20rpx 0;
   background-color: #fff;
   position: sticky;
   top: 0;

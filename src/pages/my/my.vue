@@ -250,7 +250,7 @@ const orderTypes = ref([
 const menuGroups = ref<any[]>([
   [
     { name: '意见反馈', icon: 'i-carbon-chat-bot', url: '/pages/feedback/index' },
-    { name: '客服中心', icon: 'i-carbon-customer-service', url: '/pages/service/index', badge: '' },
+    { name: '客服中心', icon: 'i-carbon-customer-service text-fuchsia', url: '/pages/service/index', badge: '' },
     { name: '关于我们', icon: 'i-carbon-information-filled text-blue', url: '/pages/about/index' },
     { name: '设置', icon: 'i-carbon-settings', url: '/pages/my/setting', badge: '' }
   ]
@@ -330,7 +330,7 @@ const handleOrderClick = (type = '') => {
   })
 }
 
-// 处理菜单点击
+// 处理菜单点击，可配置菜单项的跳转或操作
 const handleMenuClick = (item: { url?: string, name: string, action?: any }) => {
   // 如果是退出登录
   if (item.name === '退出登录') {
@@ -340,7 +340,7 @@ const handleMenuClick = (item: { url?: string, name: string, action?: any }) => 
   }
 
   // 特殊菜单项可能不需要登录
-  const noLoginRequired = ['关于我们', '意见反馈']
+  const noLoginRequired = ['关于我们', '意见反馈', '设置']
 
   if (noLoginRequired.includes(item.name)) {
     // 这些功能不需要登录就可以访问

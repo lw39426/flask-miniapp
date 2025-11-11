@@ -3,7 +3,7 @@
     <!-- 导航栏 -->
     <view class="nav-bar">
       <view class="nav-back" @tap="goBack">
-        <text class="back-icon">←</text>
+        <text class="back-icon i-carbon-arrow-left" />
       </view>
       <text class="nav-title">我的收藏</text>
       <view class="nav-right" />
@@ -343,7 +343,7 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   height: 88rpx;
-  padding: var(--status-bar-height) 30rpx 0;
+  padding: var(--status-bar-height) 20rpx 0;
   /* padding: 20rpx 32rpx; */
   background: #ffffff;
   box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);

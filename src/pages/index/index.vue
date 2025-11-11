@@ -292,7 +292,7 @@ onMounted(() => {
   const systemInfo = uni.getSystemInfoSync()
   console.log('系统信息：', systemInfo)
   safeAreaTop.value = systemInfo.safeAreaInsets.top // 获取安全区域顶部的内边距
-  loadHomeData()
+  // loadHomeData()
 })
 onShow(() => {
   loadHomeData()

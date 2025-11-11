@@ -15,11 +15,19 @@ defineOptions({
 /**
  * 中间的鼓包tabbarItem的点击事件
  */
-function handleClickBulge() {
+function handleClickBulge(pagePath: string) {
   uni.showToast({
     title: '功能正在开发中.....点击了中间的鼓包tabbarItem',
     icon: 'none',
   })
+  // 跳转聊天页面
+  console.log('跳转到：', pagePath)
+  if (tabbarCacheEnable) {
+    uni.switchTab({ url: pagePath })
+  }
+  else {
+    uni.navigateTo({ url: pagePath })
+  }
 }
 
 function handleClick(index: number) {
@@ -28,7 +36,7 @@ function handleClick(index: number) {
     return
   }
   if (tabbarList[index].isBulge) {
-    handleClickBulge()
+    handleClickBulge(tabbarList[index].pagePath)
     return
   }
   const url = tabbarList[index].pagePath

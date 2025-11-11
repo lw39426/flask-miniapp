@@ -132,6 +132,13 @@ export const customTabbarList: CustomTabBarItem[] = [
     // badge: 10,
   },
   {
+    text: '客服',
+    isBulge: true,
+    icon: '',
+    iconType: 'image',
+    pagePath: 'pages/chat/chat',
+  },
+  {
     text: '购物车',
     pagePath: 'pages/cart/cart',
     // 注意 unocss 图标需要如下处理：（二选一）
