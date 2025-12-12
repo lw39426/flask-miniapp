@@ -32,7 +32,6 @@ export function getCode(): Promise<ICaptcha> {
  */
 export function login(loginForm: ILoginForm): Promise<IAuthLoginRes> {
   return http.post<ApiResponse<IAuthLoginRes>>('/miniapp/auth/loginByUsername', loginForm).then((res) => {
-    console.log('登录-res: ', res)
     if (res.code === 200) {
       return res.data
     }
@@ -46,7 +45,6 @@ export function login(loginForm: ILoginForm): Promise<IAuthLoginRes> {
  */
 export function loginByPhone(loginForm: ILoginForm): Promise<IAuthLoginRes> {
   return http.post<ApiResponse<IAuthLoginRes>>('/miniapp/auth/loginByPhone', loginForm).then((res) => {
-    console.log('登录-res: ', res)
     if (res.code === 200) {
       return res.data
     }

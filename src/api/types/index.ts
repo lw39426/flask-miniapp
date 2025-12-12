@@ -38,3 +38,6 @@ export interface ErrorResponse {
   code: number
   errors?: Record<string, string[]>
 }
+
+// 导出聊天相关类型
+export * from './chat'

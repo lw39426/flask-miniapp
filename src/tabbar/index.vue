@@ -15,11 +15,13 @@ defineOptions({
 /**
  * 中间的鼓包tabbarItem的点击事件
  */
-function handleClickBulge() {
-  uni.showToast({
-    title: '功能正在开发中.....点击了中间的鼓包tabbarItem',
-    icon: 'none',
-  })
+function handleClickBulge(pagePath: string) {
+  if (tabbarCacheEnable) {
+    uni.switchTab({ url: pagePath })
+  }
+  else {
+    uni.navigateTo({ url: pagePath })
+  }
 }
 
 function handleClick(index: number) {
@@ -28,7 +30,7 @@ function handleClick(index: number) {
     return
   }
   if (tabbarList[index].isBulge) {
-    handleClickBulge()
+    handleClickBulge(tabbarList[index].pagePath)
     return
   }
   const url = tabbarList[index].pagePath
@@ -96,8 +98,15 @@ function getImageByIndex(index: number, item: CustomTabBarItem) {
                 <!-- 文字 -->
                 <text class="text-18px text-white" />
               </view>
+              <!-- 角标显示 -->
+              <view v-if="item.badge">
+                <view class="absolute top-0 box-border h-[60rpx] min-w-[60rpx] center rounded-full bg-#f56c6c px-1 text-center text-[40rpx] text-white -right-3">
+                  {{ Number(item.badge) > 99 ? '99+' : item.badge }}
+                </view>
+              </view>
             </view>
           </view>
+
           <view v-else class="relative px-3 text-center">
             <template v-if="item.iconType === 'uiLib'">
               <!-- TODO: 以下内容请根据选择的UI库自行替换 -->

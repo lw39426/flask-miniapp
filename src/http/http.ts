@@ -48,16 +48,12 @@ export function http<T>(options: CustomRequestOptions) {
         const resData: IResData<T> = res.data as IResData<T>
         if ((res.statusCode === 401) || (resData.code === 401)) {
           // 判断是否是登录相关请求
-          const isLoginRequest = options.url.includes('/login')
-            || options.url.includes('/auth')
-            || options.url.includes('/register')
+          const isLoginRequest = options.url?.includes('/login')
+            || options.url?.includes('/auth')
+            || options.url?.includes('/register')
 
           // 如果是登录请求，直接返回错误，不进行token刷新
           if (isLoginRequest) {
-            !options.hideErrorToast && uni.showToast({
-              icon: 'none',
-              title: resData.message || '登录失败，请检查账号密码',
-            })
             return reject(resData)
           }
 

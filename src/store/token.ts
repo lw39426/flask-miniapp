@@ -251,9 +251,9 @@ export const useTokenStore = defineStore(
      */
     const getValidToken = computed(() => {
       // token已过期，返回空
-      if (isTokenExpired.value) {
-        return ''
-      }
+      // if (isTokenExpired.value) {
+      //   return ''
+      // }
 
       if (!isDoubleTokenMode) {
         return isSingleTokenRes(tokenInfo.value) ? tokenInfo.value.token : ''
@@ -272,20 +272,20 @@ export const useTokenStore = defineStore(
       }
       if (isDoubleTokenMode) {
         // 变成布尔值 的语法糖
-        console.log('是否为双Token响应', isDoubleTokenRes(tokenInfo.value), !!tokenInfo.value)
+        // console.log('是否为双Token响应', isDoubleTokenRes(tokenInfo.value), !!tokenInfo.value)
         return isDoubleTokenRes(tokenInfo.value) && !!tokenInfo.value.access_token
       }
       else {
-        console.log('是否为单Token响应', isSingleTokenRes(tokenInfo.value), !!tokenInfo.value)
+        // console.log('是否为单Token响应', isSingleTokenRes(tokenInfo.value), !!tokenInfo.value)
         return isSingleTokenRes(tokenInfo.value) && !!tokenInfo.value.token
       }
     })
 
     /**
-     * 检查是否已登录且token有效
+     * 检查是否已登录且token有效，计算属性
      */
     const hasValidLogin = computed(() => {
-      console.log('hasValidLogin', hasLoginInfo.value, !isTokenExpired.value)
+      // console.log('hasValidLogin', hasLoginInfo.value, !isTokenExpired.value)
       // return hasLoginInfo.value && !isTokenExpired.value
       return hasLoginInfo.value
     })
@@ -315,6 +315,7 @@ export const useTokenStore = defineStore(
       register,
       wxLogin,
       logout,
+      isTokenExpired,
 
       // 认证状态判断（最常用的）
       hasLogin: hasValidLogin,

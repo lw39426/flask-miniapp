@@ -25,7 +25,7 @@
       </view>
 
       <!-- 右侧子分类内容 -->
-      <view class="category-detail">
+      <view v-if="false" class="category-detail">
         <scroll-view class="detail-scroll" :scroll-y="true">
           <!-- 加载状态 -->
           <view v-if="loading" class="loading-container">

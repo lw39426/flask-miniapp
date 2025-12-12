@@ -142,7 +142,7 @@
     </view>
 
     <!-- 快捷登录 -->
-    <view class="extra-links">
+    <view v-if="false" class="extra-links">
       <!-- <view class="i-carbon-logo-wechat text-4xl text-green" /> -->
       <sar-button
         inline
@@ -190,11 +190,11 @@ const loginType = ref('password')
 
 // 表单数据
 const form = reactive({
-  username: 'liwanwan',
+  username: 'testadmin',
   phone: '13111111111',
   phonePwd: '111111',
   code: '1',
-  password: '123123',
+  password: '123456',
   captcha: '1', // 用户输入的文本
   captcha_key: '' // 后端给的 key
 })

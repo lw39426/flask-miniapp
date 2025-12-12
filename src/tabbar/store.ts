@@ -1,10 +1,10 @@
-import type { CustomTabBarItem, CustomTabBarItemBadge } from './config'
+import type { CustomTabBarItem } from './config'
 import { reactive } from 'vue'
 
 import { isNeedLoginMode } from '@/router/config'
 import { FG_LOG_ENABLE, judgeIsExcludePath } from '@/router/interceptor'
 import { useTokenStore } from '@/store/token'
-import { tabbarList as _tabbarList, customTabbarEnable } from './config'
+import { tabbarList as _tabbarList } from './config'
 
 // TODO 1/2: 中间的鼓包tabbarItem的开关
 const BULGE_ENABLE = true
@@ -14,17 +14,6 @@ const tabbarList = reactive<CustomTabBarItem[]>(_tabbarList.map(item => ({
   ...item,
   pagePath: item.pagePath.startsWith('/') ? item.pagePath : `/${item.pagePath}`,
 })))
-
-if (customTabbarEnable && BULGE_ENABLE) {
-  if (tabbarList.length % 2) {
-    console.error('有鼓包时 tabbar 数量必须是偶数，否则样式很奇怪！！')
-  }
-  tabbarList.splice(tabbarList.length / 2, 0, {
-    text: '扫一扫',
-    isBulge: true,
-    bulgeImg: '/static/tabbar/scan.png'
-  } as CustomTabBarItem)
-}
 
 export function isPageTabbar(path: string) {
   const _path = path.split('?')[0]
@@ -48,7 +37,7 @@ const tabbarStore = reactive({
     }
   },
   // 设置 tabbar item 的 badge
-  setTabbarItemBadge(idx: number, badge: CustomTabBarItemBadge) {
+  setTabbarItemBadge(idx: number, badge: number | 'dot') {
     if (tabbarList[idx]) {
       tabbarList[idx].badge = badge
     }

@@ -29,7 +29,7 @@
 <script lang="ts" setup>
 // 引入 sard-uniapp 的 cropImage 函数
 import { cropImage } from 'sard-uniapp'
-import { ref, watch, withDefaults } from 'vue'
+import { ref, watch } from 'vue'
 // 引入上传API和Store
 import { uploadFile } from '@/api/foo'
 import { useTokenStore } from '@/store/token'
@@ -156,7 +156,7 @@ const handleChooseImage = () => {
         uni.showToast({ title: '请选择图片', icon: 'none' })
         return
       }
-
+      console.log('提取原始文件名（去掉扩展名）')
       // 提取原始文件名（去掉扩展名）
       if (res.tempFiles[0]?.name) {
         originalFileName.value = res.tempFiles[0].name.split('.').slice(0, -1).join('.')

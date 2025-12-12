@@ -7,13 +7,6 @@
   "packageManager": "pnpm@10.10.0",
   "description": "unibest - 最好的 uniapp 开发模板",
   "generate-time": "用户创建项目时生成",
-  "author": {
-    "name": "feige996",
-    "zhName": "菲鸽",
-    "email": "1020103647@qq.com",
-    "github": "https://github.com/feige996",
-    "gitee": "https://gitee.com/feige996"
-  },
   "license": "MIT",
   "homepage": "https://unibest.tech",
   "repository": "https://github.com/feige996/unibest",
@@ -112,6 +105,7 @@
     "@dcloudio/uni-mp-weixin": "3.0.0-4070620250821001",
     "@dcloudio/uni-mp-xhs": "3.0.0-4070620250821001",
     "@dcloudio/uni-quickapp-webview": "3.0.0-4070620250821001",
+    "@hyoga/uni-socket.io": "^3.0.4",
     "@vant/area-data": "^2.1.0",
     "abortcontroller-polyfill": "^1.7.8",
     "alova": "^3.3.3",
@@ -123,6 +117,7 @@
     "pinia": "2.0.36",
     "pinia-plugin-persistedstate": "3.2.1",
     "sard-uniapp": "^1.24.7",
+    "socket.io-client": "^4.8.1",
     "vue": "^3.4.21",
     "z-paging": "2.8.7"
   },

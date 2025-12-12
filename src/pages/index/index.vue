@@ -55,12 +55,19 @@
     <!-- 宣传卡片功能导航 -->
     <view class="nav-section">
       <!-- <swiper class="banner-swiper" circular :interval="3000" :duration="500">
-        <swiper-item v-for="(banner, index) in banners" :key="index">
+        <swiper-item v-for="(banner, index) in bannersMid" :key="index">
           <image class="banner-image" :src="banner.image || banner?.image_url" mode="aspectFill" @tap="onBannerTap(banner)" />
         </swiper-item>
       </swiper> -->
-      <view class="banner-swiper" circular :interval="3000" :duration="500">
-        <image class="banner-image" :src="banners[0]?.image || banners[0]?.image_url" mode="aspectFill" @tap="onBannerTap(banners[0])" />
+      <view class="banner-swiper center" circular :interval="3000" :duration="500">
+        <image
+          v-if="bannersMid.length > 0"
+          class="banner-image"
+          :src="bannersMid[0]?.image || bannersMid[0]?.image_url"
+          mode="aspectFill"
+          @tap="onBannerTap(bannersMid[0])"
+        />
+        <sar-empty v-else class="banner-image" text="暂无中间轮播图" />
       </view>
     </view>
 
@@ -114,7 +121,8 @@ definePage({
 })
 
 /* 状态 */
-const banners = ref<Banner[]>([])
+const banners = ref<Banner[]>([]) // 轮播图数据
+const bannersMid = ref<Banner[]>([]) // 中间轮播图数据
 const navItems = ref<{ id: number, name: string, icon: string, url: string }[]>([]) // 分类标签数据
 const recommendItems = ref<Product[]>([])
 const products = ref<Product[]>([])
@@ -126,6 +134,7 @@ const activeCategory = ref<number | null>(null) // 激活的分类标签
 const goToSearch = () => uni.navigateTo({ url: '/pages/search/index' })
 const goToMessage = () => uni.navigateTo({ url: '/pages/message/index' })
 const onBannerTap = (banner: Banner) => {
+  console.log('点击了轮播图：', banner)
   if (banner.link_type === 'product') {
     uni.navigateTo({ url: `/pages/product/detail?id=${banner.link_value}` })
   }
@@ -190,26 +199,18 @@ const goToCategoryDetail = (categoryId: number | null) => {
 const loadHomeData = async () => {
   try {
     const res = await getHomeData()
-    const bannersRes = await getBanners({ placement_key: 'home_top_banner' })
-    console.log('轮播数据加载结果：', bannersRes)
-    banners.value = (bannersRes as any).data.banners || [{
+    const bannersTopRes = await getBanners({ placement_key: 'home_top_banner' })
+    const bannersMidRes = await getBanners({ placement_key: 'home_middle_banner' })
+    console.log('轮播数据加载结果：', bannersTopRes, bannersMidRes)
+    banners.value = (bannersTopRes as any).data.banners || []
+    bannersMid.value = (bannersMidRes as any).data.banners || [{
       id: null,
-      title: '汤姆猫',
-      image: 'https://n.sinaimg.cn/sinacn10110/335/w725h410/20191008/86e9-ifrwayw5825360.jpg',
+      title: '默认中间轮播图',
+      image: '',
       link_type: 'product',
-      link_value: 7,
-      description: '猫和老鼠的汤姆猫'
+      link_value: 9,
+      description: '这是一个默认的中间轮播图'
     }]
-    if (banners.value.length > 0) {
-      banners.value.unshift({
-        id: null,
-        title: '汤姆猫',
-        image: 'https://n.sinaimg.cn/sinacn10110/335/w725h410/20191008/86e9-ifrwayw5825360.jpg',
-        link_type: 'product',
-        link_value: 7,
-        description: '猫和老鼠的汤姆猫'
-      })
-    }
     // 文章列表
     articles.value = res.data.articles || []
     hot_products.value = res.data.hot_products || []
@@ -245,15 +246,23 @@ const loadHomeData = async () => {
       link_value: 7,
       description: '猫和老鼠的汤姆猫'
     }]
+    bannersMid.value = [{
+      id: null,
+      title: '杰瑞鼠',
+      image: 'https://n.sinaimg.cn/sinacn10110/335/w725h410/20191008/86e9-ifrwayw5825360.jpg',
+      link_type: 'product',
+      link_value: 8,
+      description: '猫和老鼠的杰瑞鼠'
+    }]
     articles.value = [
       {
-        author: '刘德华',
+        author: '匿名用户',
         category_name: '\u52A8\u6F2B\u5C0F\u8BF4',
         content: '',
         description: '动画《狐妖小红娘》改编自小新创作的同名漫画作品 [1]。作品主要讲述了以红娘为职业的狐妖在为前世恋人牵红线过程当中发生的一系列有趣、神秘的故事',
         id: 23,
         image: 'https://pic.kts.g.mi.com/0b6f8c016b82e699588fe5a61f8685f99080080050210315033.png',
-        published_date: '2025-09-15 22:26:16',
+        published_date: '2024-06-15 22:26:16',
         tags: [
           {
             color: '#ff4141',
@@ -265,13 +274,13 @@ const loadHomeData = async () => {
         views: 1505
       },
       {
-        author: '周佳哲',
+        author: '匿名用户',
         category_name: '\u52A8\u6F2B\u5C0F\u8BF4',
         content: '',
         description: '动画《狐妖小红娘》改编自小新创作的同名漫画作品 [1]。作品主要讲述了以红娘为职业的狐妖在为前世恋人牵红线过程当中发生的一系列有趣、神秘的故事',
         id: 22,
         image: 'https://ts4.tc.mm.bing.net/th/id/OIP-C.OmmRhieRFO_ehJsGyy2IMgHaEJ?rs=1&pid=ImgDetMain&o=7&rm=3',
-        published_date: '2025-09-15 22:15:20',
+        published_date: '2024-06-12 22:15:20',
         tags: [
           {
             color: '#ff4141',
@@ -280,6 +289,60 @@ const loadHomeData = async () => {
           }
         ],
         title: '《凡人修仙传》',
+        views: 5213
+      },
+      {
+        author: '匿名用户',
+        category_name: '\u52A8\u6F2B\u5C0F\u8BF4',
+        content: '',
+        description: '何青青表示，被校草看上真的很无奈，她只想离他远远的，可奈何无法逃脱他的手掌心。',
+        id: 22,
+        image: 'https://www.wenzizhan.com/Files/wenji/1EFA9BEE-DC41-44CF-AE46-C0DD3961372A.jpg',
+        published_date: '2024-05-12 22:15:20',
+        tags: [
+          {
+            color: '#ff4141',
+            id: 7,
+            name: '\u70ED\u95E8\u63A8\u8350'
+          }
+        ],
+        title: '《余生有你：我爱青菜》',
+        views: 5213
+      },
+      {
+        author: '匿名用户',
+        category_name: '\u52A8\u6F2B\u5C0F\u8BF4',
+        content: '',
+        description: '窗台上的玻璃罐积着薄灰，标签边缘卷翘成记忆的弧度',
+        id: 22,
+        image: 'https://www.wenzizhan.com/Files/wenji/75FE2030-3805-4AC9-BB39-0928B3913DF9.jpg',
+        published_date: '2024-06-09 22:15:20',
+        tags: [
+          {
+            color: '#ff4141',
+            id: 7,
+            name: '\u70ED\u95E8\u63A8\u8350'
+          }
+        ],
+        title: '《玻璃罐里的雨季》',
+        views: 5213
+      },
+      {
+        author: '匿名用户',
+        category_name: '\u52A8\u6F2B\u5C0F\u8BF4',
+        content: '',
+        description: '戴斌和赵文伟两家是世交，到了他们这代，关系不但没淡化，反而走得更近了',
+        id: 22,
+        image: 'https://www.wenzizhan.com/Files/wenji/26D9077A-0D61-4F69-A45F-C4D928DF1196.jpg',
+        published_date: '2024-06-05 22:15:20',
+        tags: [
+          {
+            color: '#ff4141',
+            id: 7,
+            name: '\u70ED\u95E8\u63A8\u8350'
+          }
+        ],
+        title: '《寻宝闹剧》',
         views: 5213
       }
     ]
@@ -292,7 +355,7 @@ onMounted(() => {
   const systemInfo = uni.getSystemInfoSync()
   console.log('系统信息：', systemInfo)
   safeAreaTop.value = systemInfo.safeAreaInsets.top // 获取安全区域顶部的内边距
-  loadHomeData()
+  // loadHomeData()
 })
 onShow(() => {
   loadHomeData()

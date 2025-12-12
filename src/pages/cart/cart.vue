@@ -15,13 +15,16 @@
 
     <!-- 空购物车状态 -->
     <view v-else-if="!hasLogin" class="empty-cart">
-      <text class="empty-text">请先登录11</text>
+      <text class="empty-icon">🔒</text>
+      <text class="empty-text">您还未登录</text>
+      <text class="empty-desc">登录后查看购物车内容</text>
       <view class="login-btn" @tap="goToLogin">
         去登录
       </view>
     </view>
 
     <view v-else-if="isEmpty" class="empty-cart">
+      <text class="empty-icon">🛒</text>
       <text class="empty-text">购物车是空的</text>
       <text class="empty-desc">快去添加喜欢的商品吧~</text>
       <view class="go-shop-btn" @tap="navigateTo('/pages/index/index')">
@@ -104,8 +107,7 @@ import { useTokenStore } from '@/store/token'
 definePage({
   style: {
     navigationStyle: 'default',
-    navigationBarTitleText: '购物车',
-    navigationBarBackgroundColor: '#5bcba9'
+    navigationBarTitleText: '购物车'
   },
 })
 
@@ -397,7 +399,7 @@ onUnmounted(() => {
 .cart-page {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: calc(100vh - 100rpx); /* 减去顶部导航栏和底部tabbar高度 */
   background-color: #f5f5f5;
 }
 
@@ -610,7 +612,7 @@ onUnmounted(() => {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 400rpx;
+  height: 100%;
 
   .loading-text {
     font-size: 28rpx;
@@ -623,29 +625,42 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 900rpx;
+  height: 100%;
   padding: 40rpx;
-  margin-top: 130rpx;
+
+  .empty-icon {
+    font-size: 180rpx;
+    margin-bottom: 40rpx;
+    opacity: 0.3;
+  }
 
   .empty-text {
-    font-size: 32rpx;
+    font-size: 34rpx;
     color: #333;
-    margin-bottom: 20rpx;
+    font-weight: 500;
+    margin-bottom: 16rpx;
   }
 
   .empty-desc {
     font-size: 26rpx;
     color: #999;
-    margin-bottom: 40rpx;
+    margin-bottom: 60rpx;
   }
 
   .login-btn,
   .go-shop-btn {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: #ffffff;
-    padding: 20rpx 60rpx;
-    border-radius: 40rpx;
+    padding: 24rpx 80rpx;
+    border-radius: 50rpx;
     font-size: 28rpx;
+    box-shadow: 0 8rpx 20rpx rgba(102, 126, 234, 0.3);
+    transition: all 0.3s ease;
+
+    &:active {
+      transform: scale(0.95);
+      box-shadow: 0 4rpx 12rpx rgba(102, 126, 234, 0.2);
+    }
   }
 }
 

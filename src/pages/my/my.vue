@@ -2,8 +2,8 @@
   <view class="profile-page">
     <!-- 顶部背景封面图 -->
     <view class="top-show">
-      <image mode="widthFix" class="top-show-img" :src="coverSrc" @tap="changeCover" @error="onCoverError" />
-      <view v-if="hasLogin" class="cover-edit-btn" @tap="changeCover">
+      <image mode="widthFix" class="top-show-img" :src="coverSrc" @tap="changeBgCover" @error="onCoverError" />
+      <view v-if="hasLogin" class="cover-edit-btn" @tap="changeBgCover">
         更换封面
       </view>
     </view>
@@ -89,10 +89,12 @@
       </view> -->
       <!-- 底部面板 -->
       <view class="info-footer">
-        期待和你的每一次相遇 ^_^
+        <!-- 期待和你的每一次相遇 ^_^ -->
+        本项目仅适用于学习交流，并且不提供无偿的、 不提供无偿的、 不提供无偿的 维护修改服务（但可提issue）
       </view>
     </view>
   </view>
+  <sar-crop-image-agent />
 </template>
 
 <script lang="ts" setup>
@@ -102,8 +104,8 @@ import { cropImage } from 'sard-uniapp'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { getFavoriteStats } from '@/api/favorite'
 import AvatarUpload from '@/components/CustomPreview.vue' // 确保路径正确
-import { LOGIN_PAGE } from '@/router/config'
 
+import { LOGIN_PAGE } from '@/router/config'
 import { useTokenStore } from '@/store/token'
 import { useUserStore } from '@/store/user'
 
@@ -150,7 +152,7 @@ const onCoverError = () => {
 }
 
 // 更换封面：选择图片并上传到后端
-const changeCover = () => {
+const changeBgCover = () => {
   if (!hasLogin.value) {
     uni.showModal({
       title: '提示',
@@ -164,64 +166,100 @@ const changeCover = () => {
     })
     return
   }
-
+  console.log('更换封面')
   uni.chooseImage({
     count: 1,
     sizeType: ['compressed'],
     sourceType: ['album', 'camera'],
     success: (res) => {
-      cropImage({
-        src: res.tempFilePaths[0],
-        cropScale: '16:9',
-        success(filePath) {
-          console.log('裁切成功', filePath)
-          const tempFilePath = res.tempFilePaths[0]
-          if (!tempFilePath) {
-            uni.showToast({ title: '请选择图片', icon: 'none' })
-            return
-          }
-          uni.showLoading({ title: '上传中...' })
-          const baseURL = import.meta.env.VITE_SERVER_BASEURL
-          uni.uploadFile({
-            url: `${baseURL}/miniapp/user/bgCover`,
-            filePath: tempFilePath,
-            name: 'file',
-            header: {
-              Authorization: `Bearer ${(tokenStore.tokenInfo as any).access_token
-              || (tokenStore.tokenInfo as any).token}`
-            },
-            success: (uploadRes) => {
-              try {
-                const parsed = JSON.parse(uploadRes.data || '{}')
-                if (parsed.code === 200 && parsed.data?.bg_cover) {
-                  const fullUrl = parsed.data.bg_cover.startsWith('http')
-                    ? parsed.data.bg_cover
-                    : `${baseURL}${parsed.data.bg_cover}`
-                  coverUrl.value = fullUrl
-                  // 更新用户信息
-                  if (userStore.userInfo) {
-                    userStore.userInfo.bg_cover = fullUrl
-                    userStore.updateUserInfo({ ...userStore.userInfo, bg_cover: fullUrl })
-                  }
-                  uni.showToast({ title: '封面已更新', icon: 'success' })
+      const selectedPath = res.tempFilePaths[0]
+      console.log('进入chooseImage,选择的图片路径:', selectedPath)
+
+      // 定义上传函数
+      const uploadImage = (filePath: string) => {
+        console.log('开始上传图片:', filePath)
+        if (!filePath) {
+          uni.showToast({ title: '图片路径无效', icon: 'none' })
+          return
+        }
+
+        uni.showLoading({ title: '上传中...' })
+        const baseURL = import.meta.env.VITE_SERVER_BASEURL
+        const uploadUrl = `${baseURL}/miniapp/user/bgCover`
+        console.log('准备上传图片到:', uploadUrl)
+
+        uni.uploadFile({
+          url: uploadUrl,
+          filePath,
+          name: 'file',
+          header: {
+            Authorization: `Bearer ${(tokenStore.tokenInfo as any).access_token
+            || (tokenStore.tokenInfo as any).token}`
+          },
+          success: (uploadRes) => {
+            console.log('上传成功,服务器响应:', uploadRes)
+            try {
+              const parsed = JSON.parse(uploadRes.data || '{}')
+              console.log('解析后的响应数据:', parsed)
+
+              if (parsed.code === 200 && parsed.data?.bg_cover) {
+                const fullUrl = parsed.data.bg_cover.startsWith('http')
+                  ? parsed.data.bg_cover
+                  : `${baseURL}${parsed.data.bg_cover}`
+                coverUrl.value = fullUrl
+                // 更新用户信息
+                if (userStore.userInfo) {
+                  userStore.userInfo.bg_cover = fullUrl
+                  userStore.updateUserInfo({ ...userStore.userInfo, bg_cover: fullUrl })
                 }
-                else {
-                  uni.showToast({ title: parsed.message || '上传失败', icon: 'none' })
-                }
+                uni.showToast({ title: '封面已更新', icon: 'success' })
               }
-              catch {
-                uni.showToast({ title: '解析响应失败', icon: 'none' })
+              else {
+                uni.showToast({ title: parsed.message || '上传失败', icon: 'none' })
               }
-            },
-            fail: () => {
-              uni.showToast({ title: '上传失败', icon: 'none' })
-            },
-            complete: () => {
-              uni.hideLoading()
             }
-          })
-        },
-      })
+            catch (error) {
+              console.error('解析响应失败:', error)
+              uni.showToast({ title: '解析响应失败', icon: 'none' })
+            }
+          },
+          fail: (error) => {
+            console.error('上传失败:', error)
+            uni.showToast({ title: '上传失败', icon: 'none' })
+          },
+          complete: () => {
+            uni.hideLoading()
+          }
+        })
+      }
+
+      // 尝试裁剪图片
+      console.log('开始裁剪图片...')
+      try {
+        cropImage({
+          src: selectedPath,
+          cropScale: '16:9',
+          success(croppedFilePath) {
+            console.log('裁切成功,裁切后的图片路径:', croppedFilePath)
+            // 使用裁剪后的图片上传
+            uploadImage(croppedFilePath)
+          },
+          fail: (error) => {
+            console.error('图片裁切失败,使用原图:', error)
+            // 裁剪失败,直接上传原图
+            uploadImage(selectedPath)
+          }
+        })
+      }
+      catch (error) {
+        console.error('cropImage调用异常,使用原图:', error)
+        // cropImage调用异常,直接上传原图
+        uploadImage(selectedPath)
+      }
+    },
+    fail: (error) => {
+      console.error('chooseImage错误:', error)
+      uni.showToast({ title: '选择图片失败', icon: 'none' })
     }
   })
 }
@@ -250,7 +288,7 @@ const orderTypes = ref([
 const menuGroups = ref<any[]>([
   [
     { name: '意见反馈', icon: 'i-carbon-chat-bot', url: '/pages/feedback/index' },
-    { name: '客服中心', icon: 'i-carbon-customer-service', url: '/pages/service/index', badge: '' },
+    { name: '客服中心', icon: 'i-carbon-customer-service text-fuchsia', url: '/pages/service/index', badge: '' },
     { name: '关于我们', icon: 'i-carbon-information-filled text-blue', url: '/pages/about/index' },
     { name: '设置', icon: 'i-carbon-settings', url: '/pages/my/setting', badge: '' }
   ]
@@ -330,7 +368,7 @@ const handleOrderClick = (type = '') => {
   })
 }
 
-// 处理菜单点击
+// 处理菜单点击，可配置菜单项的跳转或操作
 const handleMenuClick = (item: { url?: string, name: string, action?: any }) => {
   // 如果是退出登录
   if (item.name === '退出登录') {
@@ -340,7 +378,7 @@ const handleMenuClick = (item: { url?: string, name: string, action?: any }) => 
   }
 
   // 特殊菜单项可能不需要登录
-  const noLoginRequired = ['关于我们', '意见反馈']
+  const noLoginRequired = ['关于我们', '意见反馈', '设置']
 
   if (noLoginRequired.includes(item.name)) {
     // 这些功能不需要登录就可以访问
@@ -412,7 +450,7 @@ let isFetching = false
 const fetchUserData = async () => {
   // 防抖处理：如果正在获取数据，直接返回
   if (isFetching) {
-    console.log('正在获取用户数据，跳过重复请求')
+    // console.log('正在获取用户数据，跳过重复请求')
     return
   }
 
@@ -556,7 +594,7 @@ const handlePageFocus = () => {
     lastFetchTime = now
   }
 }
-
+// let socket = null
 // 页面加载时执行 - 只执行一次初始化
 onMounted(() => {
   // 初始化封面为当前用户的 bg_cover
@@ -578,7 +616,7 @@ onMounted(() => {
 onShow(() => {
   console.log('页面显示，获取tokeninfo数据', tokenStore.tokenInfo)
   fetchUserData()
-  console.log('页面显示，获取用户数据', userInfo.value)
+  // console.log('页面显示，获取用户数据', userInfo.value)
 })
 
 // 页面卸载时清理
@@ -599,7 +637,8 @@ onUnmounted(() => {
 
 /* 顶部展示图片 */
 .top-show {
-  background: linear-gradient(164deg, #a7ffec 0%, #ff558a 100%);
+  // background: linear-gradient(164deg, #a7ffec 0%, #ff558a 100%);
+  background: #949191;
   width: 100%;
   height: 340rpx !important;
   overflow: hidden;
@@ -614,7 +653,7 @@ onUnmounted(() => {
 .cover-edit-btn {
   position: absolute;
   right: 24rpx;
-  bottom: 24rpx;
+  top: 48rpx;
   padding: 8rpx 16rpx;
   background: rgba(0, 0, 0, 0.4);
   color: #fff;

@@ -119,6 +119,10 @@ export function getHomeData(): Promise<ApiResponse<HomeData>> {
 
 /**
  * @description 获取轮播图数据
+ * @param {object} query - 查询参数
+ * @param {number} [query.position] - 轮播图位置（可选）
+ * home_top_banner、home_middle_banner、home_bottom_banner
+ * @return {Promise<Banner[]>} 轮播图数据列表
  */
 export function getBanners(query): Promise<Banner[]> {
   return http.get<Banner[]>(`${BASE_URL}/banners`, query)
