@@ -1,27 +1,25 @@
 <template>
-  <view class="avatar-container">
-    <!-- 1. 头像显示区域 -->
-    <image class="avatar" :src="avatarUrl" mode="aspectFill" @click="openCustomPreview" />
+  <!-- 1. 头像显示区域 -->
+  <image class="avatar" :src="avatarUrl" mode="aspectFill" @click="openCustomPreview" />
 
-    <!-- 2. 自定义图片预览/操作层 -->
-    <view v-if="isPreviewing" class="custom-preview-wrapper">
-      <!-- 顶部操作栏：标题和关闭按钮 -->
-      <view class="preview-header">
-        <text class="header-title">头像</text>
-        <!-- 自定义关闭按钮 -->
-        <text class="close-icon" @click="closePreview">×</text>
-      </view>
+  <!-- 2. 自定义图片预览/操作层 -->
+  <view v-if="isPreviewing" class="custom-preview-wrapper">
+    <!-- 顶部操作栏：标题和关闭按钮 -->
+    <view class="preview-header">
+      <text class="header-title">头像</text>
+      <!-- 自定义关闭按钮 -->
+      <text class="close-icon" @click="closePreview">×</text>
+    </view>
 
-      <!-- 图片主体 -->
-      <image class="preview-image" :src="previewUrl" mode="aspectFit" />
+    <!-- 图片主体 -->
+    <image class="preview-image" :src="previewUrl" mode="aspectFit" />
 
-      <!-- 底部操作按钮 -->
-      <view class="preview-footer">
-        <!-- 更换图片按钮 -->
-        <button class="action-btn change-btn" @click="handleChooseImage">
-          更换图片
-        </button>
-      </view>
+    <!-- 底部操作按钮 -->
+    <view class="preview-footer">
+      <!-- 更换图片按钮 -->
+      <button class="action-btn change-btn" @click="handleChooseImage">
+        更换图片
+      </button>
     </view>
   </view>
 </template>
@@ -202,7 +200,6 @@ const handleChooseImage = () => {
   width: 120rpx;
   height: 120rpx;
   border-radius: 50%;
-  border: 1px solid #eee;
   cursor: pointer;
 }
 

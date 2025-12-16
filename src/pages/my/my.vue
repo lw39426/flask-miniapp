@@ -683,9 +683,9 @@ onUnmounted(() => {
 .avatar {
   width: 120rpx;
   height: 120rpx;
-  border-radius: 60rpx;
+  border-radius: 50%;
   margin-right: 32rpx;
-  border: 2rpx solid rgba(168, 168, 168, 0.2);
+  border: 2rpx solid #a2d5e0dc;
 }
 
 .user-details {

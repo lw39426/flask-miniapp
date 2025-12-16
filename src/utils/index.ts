@@ -119,7 +119,7 @@ export function getEnvBaseUrl() {
 
   // # 有些同学可能需要在微信小程序里面根据 develop、trial、release 分别设置上传地址，参考代码如下。
   const VITE_SERVER_BASEURL__WEIXIN_DEVELOP = 'http://193.112.118.107:5050'
-  const VITE_SERVER_BASEURL__WEIXIN_TRIAL = 'http://127.0.0.1:5050'
+  const VITE_SERVER_BASEURL__WEIXIN_TRIAL = 'http://193.112.118.107:5050'
   const VITE_SERVER_BASEURL__WEIXIN_RELEASE = 'https://ukw0y1.laf.run'
   console.log(import.meta.env.VITE_SERVER_BASEURL)
   // 微信小程序端环境区分

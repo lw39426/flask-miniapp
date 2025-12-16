@@ -1,23 +1,17 @@
 <template>
   <view class="search-page">
     <!-- 搜索栏 -->
-    <view class="search-header">
-      <view class="search-input-box">
-        <view class="search-back" :class="{ mounted: showBackMounted, visible: showBack }" @tap="goBack">
-          <text class="back-icon">←</text>
-        </view>
-        <input
-          v-model="keyword"
-          class="search-input"
-          placeholder="搜商品/品牌/活动"
-          focus
-          @confirm="onSearch"
-          @input="onInput"
-        >
-        <view v-if="keyword" class="search-btn" @tap="onSearch">
-          <text class="search-text">搜索</text>
-        </view>
-      </view>
+    <view class="search-header-wrapper" style="background: #ffffff; width: 100%;">
+      <NavBarSearch
+        v-model="keyword"
+        :fixed="false"
+        :is-input="true"
+        :show-back="true"
+        bg-color="#f5f5f5"
+        :auto-focus="true"
+        @search="() => onSearch(true)"
+        @back="goBack"
+      />
     </view>
 
     <!-- 搜索建议 -->
@@ -85,7 +79,7 @@
       </view>
 
       <!-- 商品列表 -->
-      <scroll-view class="result-scroll" scroll-y="true" @scrolltolower="loadMore">
+      <scroll-view class="result-scroll" :scroll-y="true" @scrolltolower="loadMore">
         <view class="product-grid">
           <view
             v-for="product in searchResults"
@@ -125,8 +119,9 @@
 
 <script lang="ts" setup>
 import type { Product } from '@/api/category'
-import { computed, nextTick, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { searchProducts } from '@/api/category'
+import NavBarSearch from '@/components/NavBarSearch.vue'
 
 definePage({
   style: {
@@ -148,8 +143,8 @@ const sortBy = ref<'create_time' | 'price' | 'sales'>('create_time')
 const sortOrder = ref<'asc' | 'desc'>('desc')
 const hasSearched = ref(false)
 
-const showBack = ref(false)
-const showBackMounted = ref(false)
+// const showBack = ref(false)
+// const showBackMounted = ref(false)
 
 // 计算属性
 const showSuggestions = computed(() => keyword.value.length > 0 && !hasSearched.value)
@@ -227,7 +222,7 @@ const onSearch = async (isRefresh = false) => {
       hasMore.value = true
     }
 
-    const data = await searchProducts({
+    const data: any = await searchProducts({
       keyword: searchKeyword,
       page: page.value,
       per_page: 10,
@@ -337,7 +332,7 @@ const goToDetail = (productId: number) => {
 
 // 页面加载
 initSearchHistory()
-nextTick(() => {
+/* nextTick(() => {
   // 第一步：进入时不占位；500ms 后开始占位（布局收缩），但保持透明
   setTimeout(() => {
     showBackMounted.value = true
@@ -346,7 +341,7 @@ nextTick(() => {
       showBack.value = true
     }, 50)
   }, 110)
-})
+}) */
 </script>
 
 <style scoped>
@@ -355,65 +350,6 @@ nextTick(() => {
   height: 100vh;
   display: flex;
   flex-direction: column;
-}
-
-/* 搜索头部 */
-.search-header {
-  background: #ffffff;
-  padding: 20rpx 32rpx;
-  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
-}
-
-.search-input-box {
-  display: flex;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 999rpx;
-  padding: 16rpx 0rpx;
-  backdrop-filter: blur(6rpx);
-}
-
-.search-back {
-  width: 0;
-  height: 60rpx;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition:
-    width 500ms ease-out,
-    opacity 500ms ease;
-}
-.search-back.mounted {
-  display: flex;
-  width: 60rpx;
-  opacity: 0;
-}
-.search-back.mounted.visible {
-  opacity: 1;
-}
-
-.back-icon {
-  font-size: 36rpx;
-  color: #2c2c2c;
-}
-
-.search-input {
-  flex: 1;
-  height: 60rpx;
-  font-size: 26rpx;
-  background-color: #f4f4f4;
-  padding: 0 20rpx;
-}
-
-.search-btn {
-  padding: 0 20rpx;
-}
-
-.search-text {
-  font-size: 28rpx;
-  color: #2c2c2c;
-  font-weight: 600;
 }
 
 /* 搜索建议 */

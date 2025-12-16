@@ -1,11 +1,8 @@
 <template>
   <view class="category-page">
     <!-- 搜索栏 -->
-    <view :style="{ paddingTop: `${safeAreaTop + 30}rpx` }" class="search-header">
-      <view class="search-input-box" @tap="goToSearch">
-        <text class="search-icon">🔍</text>
-        <text class="search-placeholder">搜商品/品牌/活动</text>
-      </view>
+    <view style="background: #ffffff; width: 100%; box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);">
+      <NavBarSearch :fixed="false" bg-color="#e5e5e5" @click="goToSearch" />
     </view>
 
     <view class="category-content">
@@ -98,6 +95,7 @@
 import type { Category, Product } from '@/api/category'
 import { computed, onMounted, ref } from 'vue'
 import { getCategoryList, getCategoryProducts } from '@/api/category'
+import NavBarSearch from '@/components/NavBarSearch.vue'
 
 definePage({
   style: {
@@ -301,10 +299,9 @@ onShow(() => {
 }
 
 /* 搜索头部 */
-.search-header {
+/* .search-header {
   background: #ffffff;
   padding: 0 32rpx;
-  /* padding: 20rpx 32rpx; */
   box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
 }
 
@@ -325,7 +322,7 @@ onShow(() => {
 .search-placeholder {
   color: #666;
   font-size: 26rpx;
-}
+} */
 
 /* 分类内容 */
 .category-content {

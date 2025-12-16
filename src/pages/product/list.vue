@@ -68,7 +68,7 @@ import { getCategoryProducts, searchProducts } from '@/api/category'
 
 definePage({
   style: {
-    navigationStyle: 'custom',
+    navigationStyle: 'default',
     navigationBarTitleText: '商品列表',
   },
 })

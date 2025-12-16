@@ -8,13 +8,7 @@
         </swiper-item>
       </swiper>
       <!-- 搜索栏 -->
-      <view :style="{ top: `${safeAreaTop + 30}rpx` }" class="immersive-search">
-        <view class="search-box" @tap="goToSearch">
-          <text class="search-icon">🔍</text>
-          <text class="search-placeholder">搜商品/品牌/活动</text>
-        </view>
-        <!-- <view class="message-icon" @tap="goToMessage">💬</view> -->
-      </view>
+      <NavBarSearch @click="goToSearch" />
     </view>
 
     <!-- 问候条（黑色） -->
@@ -114,6 +108,7 @@
 import type { Article, Banner, Product } from '@/api/home'
 import { onMounted, ref } from 'vue'
 import { getBanners, getHomeData } from '@/api/home'
+import NavBarSearch from '@/components/NavBarSearch.vue'
 
 definePage({
   type: 'home',
@@ -355,6 +350,7 @@ onMounted(() => {
   const systemInfo = uni.getSystemInfoSync()
   console.log('系统信息：', systemInfo)
   safeAreaTop.value = systemInfo.safeAreaInsets.top // 获取安全区域顶部的内边距
+
   // loadHomeData()
 })
 onShow(() => {
@@ -374,47 +370,8 @@ onShow(() => {
   margin: 0;
 }
 .banner-section.immersive .banner-swiper {
-  height: 400rpx;
+  height: 470rpx;
   border-radius: 0;
-}
-.immersive-search {
-  position: absolute;
-  top: 0;
-  left: 24rpx;
-  right: 24rpx;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  z-index: 10;
-}
-.immersive-search .search-box {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 999rpx;
-  padding: 20rpx 24rpx;
-  margin-right: 16rpx;
-  backdrop-filter: blur(6rpx);
-}
-.immersive-search .search-icon {
-  margin-right: 12rpx;
-  font-size: 28rpx;
-}
-.immersive-search .search-placeholder {
-  color: #666;
-  font-size: 26rpx;
-}
-.immersive-search .message-icon {
-  font-size: 36rpx;
-  color: #fff;
-  background-color: rgba(0, 0, 0, 0.3);
-  border-radius: 50%;
-  width: 60rpx;
-  height: 60rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 /* 轮播图 */
