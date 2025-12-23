@@ -1,7 +1,7 @@
 <template>
   <view class="article-detail-page">
     <!-- 自定义导航栏 -->
-    <view class="nav-bar">
+    <view class="nav-bar" :style="{ paddingTop: `${safeAreaTop}px` }">
       <view class="nav-back" @tap="goBack">
         <text class="back-icon">←</text>
       </view>
@@ -11,11 +11,14 @@
       </view>
     </view>
 
-    <scroll-view v-if="article" class="detail-scroll" :scroll-y="true" @scroll="scroll">
+    <scroll-view v-if="article" :style="{ paddingTop: `${navbarHeight}px` }" class="detail-scroll" :scroll-y="true" @scroll="scroll">
       <!-- 文章头部信息 -->
       <view id="article-header" class="article-header">
         <!-- 文章标题 -->
-        <text id="article-title" class="article-title">{{ article.title }}</text>
+        <view class="mb-[14rpx] flex flex-row items-center justify-between">
+          <text id="article-title" class="article-title">{{ article.title }}</text>
+          <text class="ml-[14rpx] text-[50rpx]" @tap="toggleFavorite">{{ isFavorited ? '⭐' : '☆' }}</text>
+        </view>
 
         <!-- 文章元信息 -->
         <view class="article-meta">
@@ -80,7 +83,11 @@
           ref="commentRef"
           :article-id="articleId!"
           :current-user="currentUser"
+          :likes="article?.likes"
+          :is-liked="isLiked"
           @update-stats="updateCommentStats"
+          @toggle-like="toggleLike"
+          @share="shareArticle"
         />
       </view>
     </scroll-view>
@@ -89,39 +96,18 @@
     <view v-if="loading" class="loading-container">
       <text class="loading-text">加载中...</text>
     </view>
-
-    <!-- 底部操作栏 -->
-    <view v-if="article" class="bottom-bar">
-      <view class="action-buttons">
-        <button class="btn-like" @tap="toggleLike">
-          <text class="btn-icon">{{ isLiked ? '❤️' : '🤍' }}</text>
-          <text class="btn-text">{{ article.likes || 0 }}</text>
-        </button>
-        <button class="btn-favorite" @tap="toggleFavorite">
-          <text class="btn-icon">{{ isFavorited ? '⭐' : '☆' }}</text>
-          <text class="btn-text">收藏</text>
-        </button>
-        <button class="btn-comment" @tap="showComments">
-          <text class="btn-icon">💬</text>
-          <text class="btn-text">{{ commentStats?.total_comments || '评论' }}</text>
-        </button>
-        <button class="btn-share" @tap="shareArticle">
-          <text class="btn-icon">📤</text>
-          <text class="btn-text">分享</text>
-        </button>
-      </view>
-    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { CommentStatistics } from '@/api/comment'
 import type { Article } from '@/api/home'
-import { onShow } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import { computed, onMounted, ref } from 'vue'
 import { getArticleDetail } from '@/api/article'
 import { checkFavorite, FavoriteType, toggleFavorite as toggleFavoriteApi } from '@/api/favorite'
 import CommentSystem from '@/components/CommentSystem.vue'
+import { useNavbar } from '@/hooks/useNavbar'
 import { useTokenStore } from '@/store/token'
 import { useUserStore } from '@/store/user'
 
@@ -140,6 +126,9 @@ definePage({
     navigationStyle: 'custom',
   },
 })
+
+// 导航栏适配
+const { safeAreaTop, navbarHeight, menuButtonInfo, systemInfo } = useNavbar()
 
 // 响应式数据
 const article = ref<ExtendedArticle>() // 文章详情数据
@@ -161,6 +150,7 @@ const userStore = useUserStore()
 // 从用户状态管理中获取当前用户（未登录则为 null）
 const currentUser = computed(() => {
   const u = userStore.userInfo
+  console.log('userInfo:', u)
   if (!u || !u.id)
     return null
   return {
@@ -183,6 +173,7 @@ const processedContent = computed(() => {
  * 若仍不支持，退化为 ISO "yyyy-MM-ddTHH:mm:ss"
  */
 const formatDate = (dateString: string | number) => {
+  console.log('【formatDate】原始入参:', dateString, '类型:', typeof dateString)
   if (!dateString)
     return ''
   let date: Date
@@ -190,6 +181,7 @@ const formatDate = (dateString: string | number) => {
   if (typeof dateString === 'number') {
     // 时间戳（毫秒/秒）兼容
     const ts = dateString > 1e12 ? dateString : dateString * 1000
+    console.log('【formatDate】识别为时间戳，转换后毫秒:', ts)
     date = new Date(ts)
   }
   else {
@@ -198,6 +190,7 @@ const formatDate = (dateString: string | number) => {
     // 情况1：常见 "yyyy-MM-dd HH:mm:ss" 改为 "yyyy/MM/dd HH:mm:ss"（iOS支持）
     if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}(?::\d{2})?$/.test(ds)) {
       ds = ds.replace(/-/g, '/')
+      console.log('【formatDate】正则匹配 "-" 格式，替换后:', ds)
     }
 
     let d = new Date(ds)
@@ -208,29 +201,20 @@ const formatDate = (dateString: string | number) => {
         ds = ds.replace(' ', 'T')
       }
       d = new Date(ds)
+      console.log('【formatDate】第二次 new Date("', ds, '") 结果:', d, 'getTime:', d.getTime())
     }
 
     date = d
   }
   console.log('iOS 支持的时间格式:', date)
-  if (Number.isNaN(date.getTime()))
-    return ''
-
+  if (Number.isNaN(date.getTime())) {
+    console.warn('【formatDate】❌ 依旧无效，返回空串')
+    return dateString || ''
+  }
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
   return `${year}年${month}月${day}日`
-}
-
-// 获取页面参数，向后端请求文章详情
-const getPageParams = () => {
-  const pages = getCurrentPages()
-  const currentPage = pages[pages.length - 1]
-  const options = (currentPage as any).options || {}
-
-  if (options.id) {
-    articleId.value = Number.parseInt(options.id)
-  }
 }
 
 // 滚动事件处理
@@ -373,15 +357,6 @@ const toggleLike = () => {
   })
 }
 
-// 显示评论
-const showComments = () => {
-  // 滚动到评论区域
-  uni.pageScrollTo({
-    selector: '.comment-section',
-    duration: 300
-  })
-}
-
 // 分享文章
 const shareArticle = () => {
   uni.showActionSheet({
@@ -468,14 +443,23 @@ const toggleFavorite = async () => {
 const updateCommentStats = (stats: CommentStatistics) => {
   commentStats.value = stats
 }
+// 页面参数获取
+const getPageParams = (options: any) => {
+  if (options && options.id) {
+    articleId.value = Number.parseInt(options.id)
+  }
+}
 
 // 页面加载
-onMounted(() => {
-  getPageParams()
+onLoad((options) => {
+  getPageParams(options)
   loadArticleDetail()
+})
+onMounted(() => {
 })
 
 onShow(async () => {
+  console.log('1234', systemInfo, menuButtonInfo.value, navbarHeight.value, safeAreaTop.value)
   // 从未登录返回后变为已登录，刷新页面数据
   if (!lastLogin.value && tokenStore.hasLogin) {
     await loadArticleDetail()
@@ -499,16 +483,15 @@ onShow(async () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--status-bar-height) 32rpx 10rpx;
-  /* padding: 30rpx 32rpx 10rpx; */
+  /* padding: var(--status-bar-height) 32rpx 10rpx; */
+  padding: 0 32rpx 10rpx;
   background: #ffffff;
   box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
   position: fixed;
-  top: 10rpx;
+  top: 0;
   left: 0;
   right: 0;
   z-index: 100;
-  height: 90rpx;
 }
 
 .nav-back {
@@ -549,8 +532,8 @@ onShow(async () => {
 /* 详情滚动区域 */
 .detail-scroll {
   flex: 1;
-  padding-top: 140rpx; /* 为固定导航栏留出空间 */
-  padding-bottom: 120rpx;
+  /* padding-top: 166rpx; 为固定导航栏留出空间 */
+  padding-bottom: 156rpx;
 }
 
 /* 文章头部 */
@@ -564,7 +547,6 @@ onShow(async () => {
   font-weight: 700;
   color: #2c2c2c;
   line-height: 1.4;
-  margin-bottom: 14rpx;
   display: block;
 }
 
@@ -730,45 +712,55 @@ onShow(async () => {
   left: 0;
   right: 0;
   background: #ffffff;
-  padding: 0rpx 32rpx;
-  box-shadow: 0 -2rpx 10rpx rgba(0, 0, 0, 0.1);
+  padding: 16rpx 32rpx;
+  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
+  box-shadow: 0 -2rpx 10rpx rgba(0, 0, 0, 0.05);
+  z-index: 100;
 }
 
-.action-buttons {
+.bottom-bar-content {
   display: flex;
-  justify-content: space-around;
   align-items: center;
+  justify-content: space-between;
 }
 
-.btn-like,
-.btn-favorite,
-.btn-comment,
-.btn-share {
+.input-box {
+  flex: 1;
+  background: #f5f5f5;
+  height: 72rpx;
+  border-radius: 36rpx;
+  padding: 0 32rpx;
   display: flex;
-  /* flex-direction: column; */
   align-items: center;
-  background: transparent;
-  border: none;
-  padding: 16rpx;
-  border-radius: 12rpx;
-  min-width: 100rpx;
+  margin-right: 32rpx;
 }
 
-.btn-like:active,
-.btn-favorite:active,
-.btn-comment:active,
-.btn-share:active {
-  background: #f8f9fa;
+.placeholder {
+  font-size: 28rpx;
+  color: #999;
 }
 
-.btn-icon {
-  font-size: 32rpx;
-  margin-bottom: 8rpx;
+.action-icons {
+  display: flex;
+  align-items: center;
+  gap: 32rpx;
 }
 
-.btn-text {
-  font-size: 22rpx;
-  color: #666666;
+.icon-item {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+}
+
+.icon-num {
+  font-size: 38rpx;
+  color: #666;
+  font-weight: 500;
+}
+.icon-text {
+  font-size: 26rpx;
+  color: #666;
+  font-weight: 500;
 }
 
 /* rich-text 内容样式优化 */

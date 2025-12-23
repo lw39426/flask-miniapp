@@ -2,62 +2,18 @@
   <view class="comment-system">
     <!-- 评论统计 -->
     <view v-if="statistics" class="comment-stats">
-      <text class="stats-title">评论 {{ statistics.total_comments }}</text>
-      <text class="stats-detail">{{ statistics.today_comments }}条新评论</text>
+      <text class="stats-title">评论: {{ statistics.total_comments }}条新评论</text>
     </view>
     <!-- 排序筛选 -->
     <sar-dropdown v-if="!isProduct">
       <sar-dropdown-item :options="options1" model-value="1" />
       <sar-dropdown-item :options="options2" model-value="1" />
     </sar-dropdown>
-    <!-- 发表评论表单 -->
-    <view v-if="currentUser && !isProduct" class="comment-form">
-      <view class="form-header">
-        <image class="user-avatar" :src="currentUser.avatar" mode="aspectFill" />
-        <text class="form-title">
-          {{ replyTarget ? `回复 @${replyTarget.user_nickname}` : '发表评论' }}
-        </text>
-        <text v-if="replyTarget" class="cancel-reply" @tap="cancelReply">取消</text>
-      </view>
-
-      <textarea
-        v-model="commentContent"
-        class="comment-input"
-        :placeholder="(replyTarget ? `回复 @${replyTarget.user_nickname}` : '写下你的评论...')"
-        :maxlength="500"
-        auto-height
-      />
-      <view class="form-actions">
-        <text class="char-count">{{ commentContent.length }}/500</text>
-        <button
-          class="submit-btn"
-          :class="{ disabled: !commentContent.trim() || submitting }"
-          :disabled="!commentContent.trim() || submitting"
-          @tap="submitComment"
-        >
-          {{ submitting ? '发布中...' : '发布' }}
-        </button>
-      </view>
-    </view>
-
-    <!-- 未登录提示 -->
-    <view v-else-if="!isProduct" class="login-prompt">
-      <text class="prompt-text">登录后可以发表评论...</text>
-      <button class="login-btn" @tap="goToLogin">
-        去登录
-      </button>
-    </view>
-
     <!-- 评论列表 -->
     <view v-if="comments.length > 0" class="comment-list">
       <CommentItem
-        v-for="comment in comments"
-        :key="comment.id"
-        :comment="comment"
-        :current-user="currentUser"
-        @reply="handleReply"
-        @like="handleLike"
-        @delete="handleDelete"
+        v-for="comment in comments" :key="comment.id" :comment="comment" :current-user="currentUser"
+        @reply="handleReply" @like="handleLike" @delete="handleDelete"
       />
     </view>
 
@@ -65,39 +21,13 @@
     <view v-else-if="!loading" class="empty-comments">
       <text class="empty-text">{{ isProduct ? '商品评论暂未开通，敬请期待 ^_^' : '暂无评论，快来发表第一条评论吧~' }}</text>
     </view>
-
-    <!-- 回复弹窗（Wot-UI） -->
-    <sar-popup
-      :visible="showReplyPopup"
-      effect="slide-bottom"
-    >
-      <view class="reply-popup">
-        <view class="reply-header">
-          <text class="reply-title">{{ replyTarget ? `回复 @${replyTarget.user_nickname}` : '发表评论' }}</text>
-          <text class="reply-cancel" @tap="closeReplyPopup">取消</text>
-        </view>
-        <textarea
-          v-model="commentContent"
-          class="reply-textarea"
-          :focus="replyFocus"
-          :placeholder="replyTarget ? `回复 @${replyTarget.user_nickname}` : '写下你的评论...'"
-          :maxlength="500"
-          auto-height
-        />
-        <view class="reply-actions">
-          <text class="char-count">{{ commentContent.length }}/500</text>
-          <button
-            class="submit-btn"
-            :class="{ disabled: !commentContent.trim() || submitting }"
-            :disabled="!commentContent.trim() || submitting"
-            @tap="submitComment"
-          >
-            {{ submitting ? '发布中...' : '发布' }}
-          </button>
-        </view>
-      </view>
-    </sar-popup>
-
+    <!-- 未登录提示 -->
+    <view v-if="!currentUser && !currentUser?.id" class="login-prompt">
+      <text class="prompt-text">登录后可以发表评论...</text>
+      <button class="login-btn" @tap="goToLogin">
+        去登录
+      </button>
+    </view>
     <!-- 加载更多 -->
     <view v-if="pagination && pagination.has_next" class="load-more">
       <button class="load-more-btn" :disabled="loadingMore" @tap="loadMoreComments">
@@ -109,12 +39,62 @@
     <view v-if="loading" class="loading">
       <text class="loading-text">加载中...</text>
     </view>
+
+    <!-- 底部评论工具栏 -->
+    <view v-if="!isProduct" class="comment-box" :style="{ bottom: `${keyboardHeight}px` }">
+      <!-- 回复提示栏 -->
+      <view v-if="replyTarget" class="reply-bar">
+        <text class="reply-to">回复 @{{ replyTarget.user_nickname }}</text>
+        <text class="cancel-reply-btn" @tap="cancelReply">取消</text>
+      </view>
+
+      <view class="toolbar-content">
+        <!-- 左侧输入框 -->
+        <view class="input-wrapper">
+          <textarea
+            v-model="commentContent"
+            class="input-field"
+            :maxlength="500"
+            :placeholder="replyTarget ? `回复 @${replyTarget.user_nickname}...` : '爱评论的人运气都不差'"
+            :adjust-position="false"
+            :show-confirm-bar="false"
+            :disable-default-padding="true"
+            auto-height
+            :focus="replyFocus"
+            confirm-type="send"
+            @focus="onFocus"
+            @blur="onBlur"
+            @confirm="submitComment"
+          />
+        </view>
+
+        <!-- 图标栏 -->
+        <view v-if="!commentContent.trim()" class="icon-bar">
+          <view class="icon-item">
+            <text class="icon-num">💬</text>
+            <text class="icon-text">{{ statistics?.total_comments || 0 }}</text>
+          </view>
+          <view class="icon-item" @tap="emit('toggle-like')">
+            <text class="icon-num">{{ isLiked ? '❤️' : '🤍' }}</text>
+            <text class="icon-text">{{ likes || 0 }}</text>
+          </view>
+          <view class="icon-item" @tap="emit('share')">
+            <text class="icon-num">📤</text>
+          </view>
+        </view>
+
+        <!-- 发送按钮 -->
+        <button v-else class="send-btn" :disabled="submitting" @click="submitComment">
+          {{ submitting ? '...' : '发送' }}
+        </button>
+      </view>
+    </view>
   </view>
 </template>
 
 <script lang="ts" setup>
 import type { Comment, CommentListResponse, CommentStatistics } from '@/api/comment'
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { commentAPI } from '@/api/comment'
 import CommentItem from './CommentItem.vue'
 
@@ -126,10 +106,14 @@ interface Props {
     nickname: string
     avatar: string
   } | null
+  likes?: number
+  isLiked?: boolean
 }
 
 interface Emits {
   (e: 'update-stats', stats: CommentStatistics): void
+  (e: 'toggle-like'): void
+  (e: 'share'): void
 }
 
 const props = defineProps<Props>()
@@ -144,8 +128,10 @@ const loadingMore = ref(false)
 const submitting = ref(false)
 const commentContent = ref('')
 const replyTarget = ref<Comment | null>(null)
-const showReplyPopup = ref(false)
+
+const keyboardHeight = ref(0)
 const replyFocus = ref(false)
+const safeAreaBottom = ref(0)
 
 const options1 = [
   {
@@ -428,9 +414,17 @@ const submitComment = async () => {
   }
 
   if (!props.currentUser) {
-    uni.showToast({
-      title: '请先登录',
-      icon: 'none'
+    uni.showModal({
+      title: '提示',
+      content: '您需要先登录才能回复评论',
+      confirmText: '去登录',
+      success: (res) => {
+        if (res.confirm) {
+          uni.navigateTo({
+            url: '/pages/login/login'
+          })
+        }
+      }
     })
     return
   }
@@ -456,7 +450,6 @@ const submitComment = async () => {
     // 清空表单
     commentContent.value = ''
     replyTarget.value = null
-    showReplyPopup.value = false
 
     uni.showToast({
       title: '评论发表成功',
@@ -466,7 +459,7 @@ const submitComment = async () => {
   catch (error) {
     console.error('发表评论失败:', error)
     uni.showToast({
-      title: error.msg || error.message || '发表评论失败2',
+      title: error.msg || error.message || '发表评论失败',
       icon: 'error'
     })
   }
@@ -479,31 +472,50 @@ const submitComment = async () => {
 const handleReply = (comment: Comment) => {
   // 未登录先去登录
   if (!props.currentUser) {
-    uni.showToast({ title: '请先登录', icon: 'none' })
-    uni.navigateTo({ url: '/pages/login/login' })
+    uni.showModal({
+      title: '提示',
+      content: '您需要先登录才能回复评论',
+      confirmText: '去登录',
+      success: (res) => {
+        if (res.confirm) {
+          uni.navigateTo({
+            url: '/pages/login/login'
+          })
+        }
+      }
+    })
     return
   }
   replyTarget.value = comment
-  // 打开底部弹窗输入并聚焦
-  showReplyPopup.value = true
+  // 聚焦输入框
   nextTick(() => {
     replyFocus.value = false
     setTimeout(() => {
       replyFocus.value = true
-    }, 10)
+    }, 50)
   })
 }
 
 // 取消回复
 const cancelReply = () => {
   replyTarget.value = null
-  commentContent.value = ''
   replyFocus.value = false
+  uni.hideKeyboard()
 }
-const closeReplyPopup = () => {
-  commentContent.value = ''
-  showReplyPopup.value = false
-  replyFocus.value = false
+// 输入框聚焦
+const onFocus = (e) => {
+  // 这里的 e.detail.height 也可以拿到键盘高度，
+  // 但 onKeyboardHeightChange 更通用
+  keyboardHeight.value = e.detail.height
+  replyFocus.value = true
+}
+// 输入框失焦
+const onBlur = () => {
+  keyboardHeight.value = 0
+  // 延时清除聚焦状态，防止点击发送按钮失效
+  setTimeout(() => {
+    replyFocus.value = false
+  }, 100)
 }
 
 // 处理点赞
@@ -619,22 +631,76 @@ const goToLogin = () => {
   })
 }
 
+// 刷新评论列表
+const refresh = () => {
+  loadComments(1)
+  loadStatistics()
+}
+
+// 监听 ID 变化，确保拿到数据后再加载
+watch(() => props.articleId, (newId) => {
+  if (newId && !isProduct.value) {
+    refresh()
+  }
+}, { immediate: true })
+
+watch(() => props.productId, (newId) => {
+  if (newId && isProduct.value) {
+    refresh()
+  }
+}, { immediate: true })
+
 // 初始化
 onMounted(() => {
-  if (isProduct.value) {
-    loading.value = false
+  // 1. 仅非商品页需要初始化工具栏逻辑
+  if (!isProduct.value) {
+    // 获取底部安全区域高度
+    const sys = uni.getSystemInfoSync()
+    safeAreaBottom.value = (sys.safeArea && sys.safeArea.bottom) ? sys.safeArea.bottom : 0
+
+    // 【核心】监听键盘高度变化
+    uni.onKeyboardHeightChange((res) => {
+      console.log('键盘高度变化:', res.height)
+      keyboardHeight.value = res.height
+    })
+  }
+
+  // 2. 如果挂载时已经有 ID 了，就加载一次（如果 watch 没有触发）
+  if ((props.articleId || props.productId) && comments.value.length === 0) {
+    refresh()
+  }
+})
+
+// 页面卸载记得移除监听
+onUnmounted(() => {
+  // #ifdef MP-WEIXIN
+  uni.offKeyboardHeightChange()
+  // #endif
+})
+
+// 打开评论输入框（父组件调用）
+const openInput = () => {
+  if (!props.currentUser) {
+    uni.showToast({ title: '请先登录', icon: 'none' })
+    goToLogin()
     return
   }
-  loadComments()
-  loadStatistics()
-})
+  replyTarget.value = null
+  nextTick(() => {
+    replyFocus.value = false
+    setTimeout(() => {
+      replyFocus.value = true
+    }, 50)
+  })
+}
 
 // 暴露方法给父组件
 defineExpose({
   refresh: () => {
     loadComments()
     loadStatistics()
-  }
+  },
+  openInput
 })
 </script>
 
@@ -651,18 +717,12 @@ defineExpose({
   align-items: center;
   padding-bottom: 16rpx;
   border-bottom: 1rpx solid #f0f0f0;
-  margin-bottom: 32rpx;
 }
 
 .stats-title {
   font-size: 32rpx;
   font-weight: 600;
   color: #2c2c2c;
-}
-
-.stats-detail {
-  font-size: 24rpx;
-  color: #999999;
 }
 
 /* 评论表单 */
@@ -768,7 +828,7 @@ defineExpose({
 
 /* 评论列表 */
 .comment-list {
-  margin-bottom: 32rpx;
+  margin: 32rpx 0;
 }
 
 /* 空状态 */
@@ -807,6 +867,7 @@ defineExpose({
   font-size: 28rpx;
   color: #999999;
 }
+
 .reply-popup {
   padding: 24rpx 24rpx calc(24rpx + env(safe-area-inset-bottom));
   background: #ffffff;
@@ -831,20 +892,106 @@ defineExpose({
   padding: 8rpx 12rpx;
 }
 
-.reply-textarea {
-  min-height: 160rpx;
-  padding: 16rpx;
-  background: #ffffff;
-  border-radius: 8rpx;
-  font-size: 28rpx;
-  color: #2c2c2c;
-  border: 1rpx solid #e9ecef;
-  margin-bottom: 16rpx;
+/* 底部工具栏容器 */
+.comment-box {
+  position: fixed;
+  left: 0;
+  width: 100%;
+  bottom: 0;
+  z-index: 99;
+  background-color: #ffffff;
+  box-shadow: 0 -2rpx 10rpx rgba(0, 0, 0, 0.05);
+  transition: bottom 0.1s ease-out;
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
-.reply-actions {
+.reply-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 12rpx 30rpx;
+  background: #f8f9fa;
+  border-bottom: 1rpx solid #eee;
+}
+
+.reply-to {
+  font-size: 24rpx;
+  color: #666;
+}
+
+.cancel-reply-btn {
+  font-size: 24rpx;
+  color: #007bff;
+}
+
+.toolbar-content {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 30rpx;
+  box-sizing: border-box;
+}
+
+.input-wrapper {
+  flex: 1;
+  background-color: #f5f5f5;
+  border-radius: 40rpx;
+  padding: 16rpx 24rpx;
+  min-height: 40rpx;
+  display: flex;
+  overflow: hidden;
+  align-items: center;
+}
+
+.input-field {
+  width: 100%;
+  font-size: 28rpx;
+  color: #333;
+  min-height: 40rpx;
+  line-height: 40rpx;
+  max-height: 200rpx;
+}
+
+/* 图标栏布局 */
+.icon-bar {
+  display: flex;
+  align-items: center;
+  gap: 30rpx;
+  margin-left: 30rpx;
+}
+
+.icon-item {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+}
+
+.icon-num {
+  font-size: 36rpx;
+}
+
+.icon-text {
+  font-size: 24rpx;
+  color: #666;
+}
+
+.send-btn {
+  margin-left: 20rpx;
+  background-color: #ff6b81;
+  color: white;
+  border-radius: 40rpx;
+  font-size: 26rpx;
+  padding: 0 40rpx;
+  height: 64rpx;
+  line-height: 64rpx;
+  border: none;
+}
+
+.send-btn[disabled] {
+  background-color: #ffb5c1;
+  opacity: 0.8;
+}
+
+.comment-list {
+  padding-bottom: 120rpx; /* 为底部工具栏留出空间 */
 }
 </style>

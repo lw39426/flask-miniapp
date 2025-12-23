@@ -34,6 +34,7 @@ export default uniHelper({
     'style/comma-dangle': 'off', // 或 'comma-dangle': 'off' 多行对象/数组的最后一个元素后面要加逗号
     'antfu/top-level-function': 'off', // 要求「顶层函数」使用传统的 function 声明，不准使用箭头函数
     'vue/no-unused-refs': 'off',
+    'html-self-closing': 'off',
     'unused-imports/no-unused-vars': 'off',
     'eslint-comments/no-unlimited-disable': 'off',
     'jsdoc/check-param-names': 'off',

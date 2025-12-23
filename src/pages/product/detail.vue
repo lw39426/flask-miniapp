@@ -1,17 +1,19 @@
 <template>
   <view class="product-detail-page">
-    <!-- 导航栏 -->
-    <view class="nav-bar">
+    <!-- 自定义导航栏 -->
+    <view class="nav-bar" :style="{ paddingTop: `${safeAreaTop}px` }">
       <view class="nav-back" @tap="goBack">
         <text class="back-icon">←</text>
       </view>
-      <text class="nav-title">商品详情</text>
-      <view class="nav-right" />
+      <text class="nav-title">{{ '商品详情' }}</text>
+      <view class="nav-actions">
+        <!-- <text class="nav-action" @tap="shareArticle">分享</text> -->
+      </view>
     </view>
 
-    <scroll-view v-if="product" class="detail-scroll" :scroll-y="true">
+    <scroll-view v-if="product" :style="{ paddingTop: `${navbarHeight}px` }" class="detail-scroll" :scroll-y="true">
       <!-- 商品图片 -->
-      <view class="product-images">
+      <view class="mb-[20rpx] bg-[#fff] py-[20rpx]">
         <swiper class="image-swiper" :indicator-dots="true" autoplay circular>
           <swiper-item v-for="(image, index) in productImages" :key="index">
             <image class="swiper-image" :src="image || ''" mode="aspectFit" />
@@ -125,6 +127,7 @@ import { addToCart as addToCartAPI } from '@/api/cart'
 import { getProductDetail } from '@/api/category'
 import { checkFavorite, FavoriteType, toggleFavorite as toggleFavoriteApi } from '@/api/favorite'
 import CommentSystem from '@/components/CommentSystem.vue'
+import { useNavbar } from '@/hooks/useNavbar'
 import { useTokenStore } from '@/store/token'
 
 definePage({
@@ -133,6 +136,9 @@ definePage({
     navigationBarTitleText: '商品详情',
   },
 })
+
+// 导航栏适配
+const { safeAreaTop, navbarHeight } = useNavbar()
 
 // 响应式数据
 const product = ref<ProductDetail>()
@@ -519,14 +525,18 @@ const updateCommentStats = (stats: CommentStatistics) => {
 onLoad((options) => {
   initPageData(options)
   loadProductDetail()
-})
 
-// 页面挂载后检查收藏状态
-onMounted(() => {
   // 延迟检查收藏状态，确保productId已设置
   setTimeout(() => {
     checkFavoriteStatus()
   }, 100)
+})
+
+onReady(() => {
+})
+
+// 页面挂载
+onMounted(() => {
 })
 </script>
 
@@ -543,10 +553,15 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--status-bar-height) 32rpx 20rpx;
+  /* padding: var(--status-bar-height) 32rpx 10rpx; */
+  padding: 0 32rpx 10rpx;
   background: #ffffff;
   box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
-  height: 90rpx;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
 }
 
 .nav-back {
@@ -566,22 +581,29 @@ onMounted(() => {
   font-size: 32rpx;
   font-weight: 600;
   color: #2c2c2c;
+  max-width: 400rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: all 0.3s ease;
 }
 
-.nav-right {
+.nav-actions {
   width: 60rpx;
+  display: flex;
+  justify-content: flex-end;
 }
 
 /* 详情滚动区域 */
 .detail-scroll {
   flex: 1;
+  // padding-top: 166rpx; /* 为固定导航栏留出空间 */
   padding-bottom: 220rpx;
 }
 
 /* 商品图片 */
 .product-images {
   background: #ffffff;
-  margin-bottom: 20rpx;
 }
 
 .image-swiper {
@@ -731,6 +753,7 @@ onMounted(() => {
   background: #ffffff;
   padding: 20rpx 32rpx;
   box-shadow: 0 -2rpx 10rpx rgba(0, 0, 0, 0.1);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 /* 数量选择区域 */
