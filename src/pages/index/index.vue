@@ -194,6 +194,7 @@ const goToCategoryDetail = (categoryId: number | null) => {
 const loadHomeData = async () => {
   try {
     const res = await getHomeData()
+    // 轮播数据
     const bannersTopRes = await getBanners({ placement_key: 'home_top_banner' })
     const bannersMidRes = await getBanners({ placement_key: 'home_middle_banner' })
     console.log('轮播数据加载结果：', bannersTopRes, bannersMidRes)
@@ -236,7 +237,7 @@ const loadHomeData = async () => {
     banners.value = [{
       id: null,
       title: '汤姆猫',
-      image: 'https://n.sinaimg.cn/sinacn10110/335/w725h410/20191008/86e9-ifrwayw5825360.jpg',
+      image: 'https://www.toopic.cn/public/uploads/small/1759043205775175904320543.jpg',
       link_type: 'product',
       link_value: 7,
       description: '猫和老鼠的汤姆猫'
@@ -244,7 +245,7 @@ const loadHomeData = async () => {
     bannersMid.value = [{
       id: null,
       title: '杰瑞鼠',
-      image: 'https://n.sinaimg.cn/sinacn10110/335/w725h410/20191008/86e9-ifrwayw5825360.jpg',
+      image: 'https://www.toopic.cn/public/uploads/small/1759043205775175904320543.jpg',
       link_type: 'product',
       link_value: 8,
       description: '猫和老鼠的杰瑞鼠'
@@ -345,12 +346,7 @@ const loadHomeData = async () => {
     uni.showToast({ title: e?.message || '首页数据获取失败', icon: 'none' })
   }
 }
-const safeAreaTop = ref(0)
 onMounted(() => {
-  const systemInfo = uni.getSystemInfoSync()
-  console.log('系统信息：', systemInfo)
-  safeAreaTop.value = systemInfo.safeAreaInsets.top // 获取安全区域顶部的内边距
-
   // loadHomeData()
 })
 onShow(() => {

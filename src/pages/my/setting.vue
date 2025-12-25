@@ -1,7 +1,7 @@
 <template>
   <view class="setting-page">
     <!-- 自定义导航栏 -->
-    <view class="custom-nav">
+    <!-- <view class="custom-nav">
       <view class="nav-left" @tap="goBack">
         <text class="nav-icon i-carbon-arrow-left" />
       </view>
@@ -9,7 +9,7 @@
         设置
       </view>
       <view class="nav-right" />
-    </view>
+    </view> -->
 
     <!-- 个人信息设置 -->
     <view class="setting-section">
@@ -70,7 +70,7 @@ import { useTokenStore } from '@/store/token'
 // 定义页面配置
 definePage({
   style: {
-    navigationStyle: 'custom',
+    navigationStyle: 'default',
     navigationBarTitleText: '设置',
   },
 })

@@ -96,6 +96,8 @@
 import type { Comment, CommentListResponse, CommentStatistics } from '@/api/comment'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { commentAPI } from '@/api/comment'
+import { useNavbar } from '@/hooks/useNavbar'
+import { useTokenStore } from '@/store/token'
 import CommentItem from './CommentItem.vue'
 
 interface Props {
@@ -118,6 +120,11 @@ interface Emits {
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
+
+const tokenStore = useTokenStore()
+
+// 导航栏适配
+const { safeAreaBottom: hookSafeAreaBottom } = useNavbar()
 
 // 响应式数据
 const comments = ref<Comment[]>([])
@@ -654,9 +661,8 @@ watch(() => props.productId, (newId) => {
 onMounted(() => {
   // 1. 仅非商品页需要初始化工具栏逻辑
   if (!isProduct.value) {
-    // 获取底部安全区域高度
-    const sys = uni.getSystemInfoSync()
-    safeAreaBottom.value = (sys.safeArea && sys.safeArea.bottom) ? sys.safeArea.bottom : 0
+    // 设置底部安全区域高度
+    safeAreaBottom.value = hookSafeAreaBottom.value
 
     // 【核心】监听键盘高度变化
     uni.onKeyboardHeightChange((res) => {

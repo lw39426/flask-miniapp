@@ -1,7 +1,7 @@
 <template>
   <view class="profile-page">
     <!-- 自定义导航栏 -->
-    <view class="custom-nav">
+    <!-- <view class="custom-nav">
       <view class="nav-left" @tap="goBack">
         <text class="nav-icon i-carbon-arrow-left" />
       </view>
@@ -9,9 +9,8 @@
         个人资料
       </view>
       <view class="nav-right">
-        <text class="nav-icon">⋮</text>
       </view>
-    </view>
+    </view> -->
     <!-- 个人资料表单 -->
     <sar-form ref="formRef" :model="form" :rules="rules" class="profile-form">
       <view class="section-title">
@@ -83,7 +82,7 @@ const { colPickerData, findChildrenByCode } = useColPickerData()
 // 定义页面配置
 definePage({
   style: {
-    navigationStyle: 'custom',
+    navigationStyle: 'default',
     navigationBarTitleText: '个人资料',
   },
 })

@@ -13,8 +13,18 @@ export function useNavbar() {
   const systemInfo = uni.getSystemInfoSync()
   // 胶囊按钮信息 (仅小程序)
   const menuButtonInfo = ref<UniApp.GetMenuButtonBoundingClientRectRes | null>(null)
+  // 底部安全区域高度
+  const safeAreaBottom = ref(0)
 
-  const initNavbar = () => {
+  const initNavbar = (systemInfo1: any) => {
+    // 计算底部安全区域
+    if (systemInfo1.safeArea) {
+      safeAreaBottom.value = systemInfo1.screenHeight - systemInfo1.safeArea.bottom
+    }
+    else {
+      safeAreaBottom.value = 0
+    }
+
     // #ifdef MP-WEIXIN
     try {
       const menuInfo = uni.getMenuButtonBoundingClientRect()
@@ -22,7 +32,7 @@ export function useNavbar() {
       // 这里的 top 通常作为标题文字的起始高度
       safeAreaTop.value = menuInfo.top
       // 整个导航栏高度 = 胶囊底部 + 8px 呼吸间距
-      navbarHeight.value = menuInfo.bottom + 8
+      navbarHeight.value = menuInfo.bottom
     }
     catch (e) {
       // 兜底方案
@@ -37,14 +47,19 @@ export function useNavbar() {
     safeAreaTop.value = systemInfo.statusBarHeight || 0
     navbarHeight.value = (systemInfo.statusBarHeight || 0) + 44
     // #endif
+    console.log('systemInfo', systemInfo)
+    console.log('safeAreaTop', safeAreaTop.value)
+    console.log('navbarHeight', navbarHeight.value)
+    console.log('safeAreaBottom', safeAreaBottom.value)
   }
 
   // 初始化调用
-  initNavbar()
+  initNavbar(systemInfo)
 
   return {
     safeAreaTop,
     navbarHeight,
+    safeAreaBottom,
     systemInfo,
     menuButtonInfo,
     initNavbar,

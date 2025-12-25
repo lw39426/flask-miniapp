@@ -6,6 +6,7 @@
   >
     <!-- 顶部自定义导航栏 - 固定高度 -->
     <view
+      v-if="false"
       class="flex-shrink-0 border-b-1 border-[#e5e5e5] bg-white"
       :style="{ paddingTop: `${safeAreaTop}px` }"
     >
@@ -29,8 +30,7 @@
 
     <!-- 中间消息记录区域 - flex: 1 自动填充剩余空间 -->
     <scroll-view
-      class="flex-1 overflow-y-auto"
-      :style="{ paddingTop: `${safeAreaTop + 20}rpx` }"
+      class="flex-1 overflow-y-auto pt-[20rpx]"
       scroll-y
       :scroll-into-view="scrollToView"
       :scroll-with-animation="true"
@@ -44,14 +44,14 @@
       <!-- 遍历消息记录 -->
       <view v-for="message in messages" :id="`msg-${message.id}`" :key="message.id" class="px-[24rpx]">
         <!-- 时间分割线 / 系统提示 -->
-        <view v-if="message.showTime" class="mb-[24rpx] mt-0 flex justify-center">
+        <view v-if="message.showTime" class="mt-0 flex justify-center">
           <view class="rounded-[8rpx] bg-black/8 p-[6rpx_20rpx]">
             <text class="text-[24rpx] color-[#999] leading-none">{{ formatMessageTime(message.created_at) }}</text>
           </view>
         </view>
 
         <!-- 消息项-消息气泡 -->
-        <view class="mb-[24rpx]" :class="{ 'flex justify-end': message.is_own, 'flex': !message.is_own }">
+        <view class="mb-[40rpx]" :class="{ 'flex justify-end': message.is_own, 'flex': !message.is_own }">
           <sar-avatar
             v-if="!message.is_own"
             :src="message.sender?.avatar || ''"
@@ -141,7 +141,7 @@
     <view
       class="flex-shrink-0 border-t-1 border-[#e5e5e5] bg-[#f7f7f7] pb-[env(safe-area-inset-bottom)]"
     >
-      <view class="min-h-[78rpx] flex items-end gap-[12rpx] p-[16rpx_24rpx]">
+      <view class="min-h-[78rpx] flex items-end gap-[12rpx] p-[4rpx_24rpx]">
         <!-- 语音/文字切换 -->
         <view class="h-[72rpx] w-[72rpx] flex flex-shrink-0 cursor-pointer items-center justify-center rounded-full transition-all active:scale-95 active:bg-black/5" @tap="toggleVoiceMode">
           <view :class="isVoiceMode ? 'i-carbon-keyboard text-gray-500' : 'i-carbon-microphone-filled text-gray-500'" />
@@ -252,6 +252,7 @@ import { onHide, onLoad, onShow } from '@dcloudio/uni-app'
 import { computed, nextTick, onUnmounted, ref } from 'vue'
 
 import { getMessages, markRoomAsRead, sendMessage as sendMessageApi } from '@/api/chat'
+import { useNavbar } from '@/hooks/useNavbar'
 import { PAGINATION } from '@/pages/chat/config'
 import { useChatStore } from '@/store/chat'
 import { SocketEvent, socketManager } from '@/utils/socket'
@@ -263,8 +264,8 @@ const roomName = ref('')
 // 页面配置
 definePage({
   style: {
+    navigationStyle: 'default', // 使用系统导航栏
     navigationBarTitleText: '聊天',
-    navigationStyle: 'custom', // 使用自定义导航栏
     backgroundColor: '#f5f5f5',
   }
 })
@@ -279,6 +280,7 @@ interface Message extends ChatMessage {
 }
 
 // 状态管理
+const { safeAreaTop } = useNavbar()
 const messages = ref<Message[]>([])
 const inputText = ref('')
 const isVoiceMode = ref(false)
@@ -404,6 +406,12 @@ const loadMessages = async (isLoadMore = false) => {
         ...msg,
         status: 'sent' as const
       }))
+      // const newMessages = Array.from({ length: 20 }, (_, i) => ({
+      //   ...response.data.messages[0],
+      //   id: i, // 避免 key 重复
+      //   content: `消息${i + 1}`,
+      //   status: 'sent' as const
+      // }))
 
       // 加载更多时追加到顶部
       if (isLoadMore) {
@@ -1172,11 +1180,17 @@ const handleTypingStart = (data: any) => {
 
   // 显示输入状态
   isOtherTyping.value = true
+  uni.setNavigationBarTitle({
+    title: '对方正在输入...'
+  })
 
   // 3秒后自动隐藏（防止对方未发送 typing_stop）
   otherTypingTimer = setTimeout(() => {
     isOtherTyping.value = false
     otherTypingTimer = null
+    uni.setNavigationBarTitle({
+      title: roomName.value
+    })
   }, 3000) as unknown as number
 }
 
@@ -1201,6 +1215,9 @@ const handleTypingStop = (data: any) => {
 
   // 隐藏输入状态
   isOtherTyping.value = false
+  uni.setNavigationBarTitle({
+    title: roomName.value
+  })
 }
 
 /**
@@ -1272,14 +1289,8 @@ const cleanupRoomWebSocket = () => {
   unregisterPageListeners()
 }
 
-const safeAreaTop = ref(0)
-
 // 页面加载
 onLoad((options: any) => {
-  const systemInfo = uni.getSystemInfoSync()
-  console.log('[Room] 系统信息：', systemInfo)
-  safeAreaTop.value = systemInfo.safeAreaInsets.top
-
   roomId.value = Number.parseInt(options.id) || 0
   roomName.value = options.name || '聊天'
 

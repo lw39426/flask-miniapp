@@ -35,7 +35,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watchEffect } from 'vue'
+import { useNavbar } from '@/hooks/useNavbar'
 
 const props = defineProps({
   // 是否为输入框模式
@@ -77,29 +78,33 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'search', 'click', 'back'])
 
+// 使用导航栏适配 Hook
+const { safeAreaTop, menuButtonInfo, systemInfo } = useNavbar()
+
 // 样式状态
 const containerStyle = ref({})
 const boxStyle = ref({})
 
-onMounted(() => {
-  const systemInfo = uni.getSystemInfoSync()
-  let top = 0
+watchEffect(() => {
+  const top = safeAreaTop.value
   let height = 32
-  let rightSpace = 0
+  let rightSpace = 16
 
-  // #ifdef MP
-  const menuButton = uni.getMenuButtonBoundingClientRect()
-  top = menuButton.top
-  height = menuButton.height
-  // 计算右侧留白：屏幕宽度 - 胶囊左侧位置 + 额外一点间距
-  rightSpace = systemInfo.screenWidth - menuButton.left + 8
-  // #endif
-
-  // #ifndef MP
-  top = (systemInfo.safeAreaInsets?.top || 0) + 15
-  height = 32
-  rightSpace = 16
-  // #endif
+  if (menuButtonInfo.value) {
+    // 小程序平台：使用胶囊按钮信息
+    height = menuButtonInfo.value.height
+    // 计算右侧留白：屏幕宽度 - 胶囊左侧位置 + 额外一点间距
+    rightSpace = systemInfo.screenWidth - menuButtonInfo.value.left + 8
+  }
+  else {
+    // 非小程序平台
+    height = 32
+    rightSpace = 16
+    // 如果 safeAreaTop 为 0（可能是在 H5 且没有状态栏高度），给一个默认间距
+    if (top === 0) {
+      // 在 H5/Web 环境下，通常不需要状态栏避让，或者根据需要调整
+    }
+  }
 
   const commonStyle = {
     paddingTop: `${top}px`,
@@ -140,6 +145,10 @@ onMounted(() => {
     width: '100%', // 撑满容器剩余空间
     boxSizing: 'border-box'
   }
+})
+
+onMounted(() => {
+  // logic moved to watchEffect for reactivity
 })
 
 const onInput = (e: any) => {

@@ -225,8 +225,8 @@ const scroll = (e: any) => {
   uni.createSelectorQuery().select('#article-title').boundingClientRect((rect) => {
     if (rect && !Array.isArray(rect)) {
       // 当文章标题滑出视窗顶部时（考虑导航栏高度）
-      const navBarHeight = 88 // 导航栏高度（rpx转px大约44px * 2）
-      const titleIsVisible = rect.bottom > navBarHeight
+      const currentNavBarHeight = navbarHeight.value
+      const titleIsVisible = rect.bottom > currentNavBarHeight
 
       if (titleIsVisible !== titleVisible.value) {
         titleVisible.value = titleIsVisible

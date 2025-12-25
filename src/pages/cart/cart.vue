@@ -2,7 +2,7 @@
   <z-paging
     ref="paging"
     v-model="cartItems"
-    :paging-style="{ height: 'calc(100vh - 44px - 50px - env(safe-area-inset-bottom))' }"
+    :paging-style="{ height: 'calc(100vh - 50px - env(safe-area-inset-bottom))' }"
     :auto-show-back-to-top="true"
     bg-color="#f5f5f5"
     @query="queryList"
@@ -42,8 +42,7 @@
           :options="swipeOptions"
           :threshold="0.3"
           :auto-close="true"
-          :visible="(activeSwipeIndex === index) as any"
-          class="flex-1"
+          :visible="((activeSwipeIndex === index) as any)"
           @update:visible="(val) => handleVisibleChange(val, index)"
           @click="handleSwipeClick($event, index)"
         >
@@ -81,17 +80,15 @@
             </view>
           </view>
           <template #right="{ hide }">
-            <view style="margin-bottom: 20rpx;">
-              <sar-button
-                theme="danger"
-                square
-                inline
-                style="height: 100%"
-                @click="onClick('删除', hide)"
-              >
-                删除
-              </sar-button>
-            </view>
+            <sar-button
+              theme="danger"
+              square
+              inline
+              style="height: 100%"
+              @click="onClick('删除', hide)"
+            >
+              删除
+            </sar-button>
           </template>
         </sar-swipe-action>
       </view>
@@ -496,12 +493,8 @@ const goToLogin = () => {
   })
 }
 
-const safeAreaTop = ref(0)
 // 页面加载时获取数据
 onMounted(() => {
-  const systemInfo = uni.getSystemInfoSync()
-  console.log('系统信息：', systemInfo)
-  safeAreaTop.value = systemInfo.safeAreaInsets.top // 获取安全区域顶部的内边距
   // 监听购物车变化事件
   uni.$on('cartChanged', () => {
     paging.value?.reload()
@@ -526,8 +519,6 @@ onUnmounted(() => {
 }
 
 .cart-item-container {
-  display: flex;
-  align-items: center;
   padding: 0 30rpx;
   margin-bottom: 20rpx;
 }

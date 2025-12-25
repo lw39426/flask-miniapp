@@ -276,12 +276,8 @@ const goToProduct = (product: Product) => {
   })
 }
 
-const safeAreaTop = ref(0)
 // 页面加载时获取数据
 onMounted(() => {
-  const systemInfo = uni.getSystemInfoSync()
-  console.log('系统信息：', systemInfo)
-  safeAreaTop.value = systemInfo.safeAreaInsets.top // 获取安全区域顶部的内边距
   loadCategories()
 })
 onShow(() => {
