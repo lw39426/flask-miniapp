@@ -1,16 +1,16 @@
 <template>
   <view class="product-list-page">
     <!-- 导航栏 -->
-    <view class="nav-bar">
+    <!-- <view class="nav-bar">
       <view class="nav-back" @tap="goBack">
         <text class="back-icon">←</text>
       </view>
       <text class="nav-title">{{ categoryName || '商品列表' }}</text>
       <view class="nav-right" />
-    </view>
+    </view> -->
 
     <!-- 筛选栏 -->
-    <view class="filter-bar">
+    <view class="filter-bar bg-[#fff]">
       <view class="filter-item" :class="{ active: sortBy === 'create_time' }" @tap="setSortBy('create_time')">
         <text>综合</text>
       </view>
@@ -32,7 +32,7 @@
           class="product-item"
           @tap="goToDetail(product.id)"
         >
-          <image class="product-image" :src="product.main_image" mode="aspectFill" />
+          <image class="product-image" :src="product.main_image" mode="aspectFit" />
           <view class="product-info">
             <text class="product-name">{{ product.name }}</text>
             <view class="product-price-row">
@@ -70,6 +70,7 @@ definePage({
   style: {
     navigationStyle: 'default',
     navigationBarTitleText: '商品列表',
+    backgroundColor: '#fff',
   },
 })
 
@@ -196,7 +197,7 @@ onMounted(() => {
 
 <style scoped>
 .product-list-page {
-  background-color: #f8f6f0;
+  /* background-color: #f3f2f1; */
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -239,7 +240,7 @@ onMounted(() => {
 .filter-bar {
   display: flex;
   background: #ffffff;
-  border-bottom: 1rpx solid #f0f0f0;
+  /* border-bottom: 1rpx solid #f0f0f0; */
 }
 
 .filter-item {
@@ -271,16 +272,16 @@ onMounted(() => {
 .product-grid {
   display: flex;
   flex-wrap: wrap;
-  padding: 24rpx;
+  padding: 10rpx 18rpx 18rpx;
   justify-content: space-between;
 }
 
 .product-item {
-  width: calc(50% - 12rpx);
+  width: calc(50% - 10rpx);
   background: #ffffff;
-  border-radius: 16rpx;
+  border-radius: 0 0 16rpx 16rpx;
   overflow: hidden;
-  margin-bottom: 24rpx;
+  margin-bottom: 20rpx;
   box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
 }
 
