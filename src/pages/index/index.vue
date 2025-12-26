@@ -1,106 +1,117 @@
 <template>
-  <view class="home-page">
-    <!-- 沉浸式轮播与搜索 -->
-    <view class="banner-section immersive">
-      <swiper class="banner-swiper" indicator-dots circular autoplay :interval="3000" :duration="500">
-        <swiper-item v-for="(banner, index) in banners" :key="index">
-          <image class="banner-image" :src="banner?.image || banner?.image_url || ''" mode="aspectFill" @tap="onBannerTap(banner)" />
-        </swiper-item>
-      </swiper>
-      <!-- 搜索栏 -->
-      <NavBarSearch @click="goToSearch" />
-    </view>
+  <view>
+    <HomeSkeleton v-if="isLoading" />
+    <view v-else class="home-page">
+      <!-- 沉浸式轮播与搜索 -->
+      <view class="banner-section immersive">
+        <swiper class="banner-swiper" indicator-dots circular autoplay :interval="3000" :duration="500">
+          <swiper-item v-for="(banner, index) in banners" :key="index">
+            <image class="banner-image" :src="banner?.image || banner?.image_url || ''" mode="aspectFill" @tap="onBannerTap(banner)" />
+          </swiper-item>
+        </swiper>
+        <!-- 搜索栏 -->
+        <NavBarSearch @click="goToSearch" />
+      </view>
 
-    <!-- 问候条（黑色） -->
-    <view class="greet-section">
-      <view class="greet-left">
-        <image class="greet-avatar" src="/static/images/default-avatar.svg" mode="aspectFill" />
-        <view class="greet-texts">
-          <text class="greet-hey">Hey，来跟幸运打个招呼</text>
-          <text class="greet-level">Lv1 小蓝鹿</text>
+      <!-- 问候条（黑色） -->
+      <view class="greet-section">
+        <view class="greet-left">
+          <image class="greet-avatar" :src="user?.avatar || ''" mode="aspectFill" />
+          <view class="greet-texts">
+            <view class="greet-name">
+              <view class="text-[22rpx] text-[#fff]">
+                <text class="mr-[8rpx]">Hey</text>
+                <text class="">{{ 'kiko' }}</text>
+              </view>
+              <text class="greet-hey">来跟幸运打个招呼</text>
+            </view>
+            <text class="greet-level">Lv1 小蓝鹿 ›</text>
+          </view>
         </view>
       </view>
-      <view class="greet-right">
-        ›
-      </view>
-    </view>
 
-    <!-- 优惠活动卡片 -->
-    <view class="promo-section">
-      <view class="promo-left promo-card primary" @tap="goToMore">
-        <text class="promo-title">领3张 9.9元饮品券</text>
-        <text class="promo-sub">加奈幸运 好礼周周领</text>
-        <view class="promo-btn">
-          立即领取
+      <!-- 优惠活动卡片 -->
+      <view class="promo-section">
+        <view
+          class="promo-left promo-card primary"
+          @tap="goAlert('孩子，你做什么梦呢？？？？？？' + '\n' + '哈哈哈哈哈哈哈')"
+        >
+          <text class="promo-title">加奈幸运 好礼周周领</text>
+          <text class="promo-sub text-[26rpx]">点击免费领取</text>
+          <text class="bold text-align-center text-[28rpx]">iPhone 17 Pro Max</text>
+          <view class="promo-btn">
+            立即领取
+          </view>
+        </view>
+        <view class="promo-right" @tap="goToMore">
+          <view class="promo-card primary">
+            <text class="promo-title">邀好友 得100元</text>
+            <text class="promo-sub">新朋友首杯专享福利</text>
+          </view>
+          <view class="promo-card primary" @tap="goToMore">
+            <text class="promo-title">还差1杯得</text>
+            <text class="promo-sub">电子勋章</text>
+          </view>
         </view>
       </view>
-      <view class="promo-right" @tap="goToMore">
-        <view class="promo-card primary">
-          <text class="promo-title">邀好友 得20元</text>
-          <text class="promo-sub">新朋友首杯专享福利</text>
-        </view>
-        <view class="promo-card primary" @tap="goToMore">
-          <text class="promo-title">还差1杯得</text>
-          <text class="promo-sub">电子勋章</text>
-        </view>
-      </view>
-    </view>
 
-    <!-- 宣传卡片功能导航 -->
-    <view class="nav-section">
-      <!-- <swiper class="banner-swiper" circular :interval="3000" :duration="500">
+      <!-- 宣传卡片功能导航 -->
+      <view class="nav-section">
+        <!-- <swiper class="banner-swiper" circular :interval="3000" :duration="500">
         <swiper-item v-for="(banner, index) in bannersMid" :key="index">
           <image class="banner-image" :src="banner.image || banner?.image_url" mode="aspectFill" @tap="onBannerTap(banner)" />
         </swiper-item>
       </swiper> -->
-      <view class="banner-swiper center" circular :interval="3000" :duration="500">
-        <image
-          v-if="bannersMid.length > 0"
-          class="banner-image"
-          :src="bannersMid[0]?.image || bannersMid[0]?.image_url"
-          mode="aspectFill"
-          @tap="onBannerTap(bannersMid[0])"
-        />
-        <sar-empty v-else class="banner-image" text="暂无中间轮播图" />
+        <view class="banner-swiper center" circular :interval="3000" :duration="500">
+          <image
+            v-if="bannersMid.length > 0"
+            class="banner-image"
+            :src="bannersMid[0]?.image || bannersMid[0]?.image_url"
+            mode="aspectFill"
+            @tap="onBannerTap(bannersMid[0])"
+          />
+          <sar-empty v-else class="banner-image" text="暂无中间轮播图" />
+        </view>
       </view>
-    </view>
 
-    <!-- 产品分类和商品组件 -->
-    <CategoryProducts
-      :categories="navItems || []"
-      :default-category-id="activeCategory || (navItems[0] && navItems[0].id)"
-      @category-change="onCategoryChange"
-      @product-click="goToProduct"
-      @view-more="goToCategoryDetail"
-    />
+      <!-- 产品分类和商品组件 -->
+      <CategoryProducts
+        :categories="navItems || []"
+        :default-category-id="activeCategory || (navItems[0] && navItems[0].id)"
+        @category-change="onCategoryChange"
+        @product-click="goToProduct"
+        @view-more="goToCategoryDetail"
+      />
 
-    <!-- 精选文章 -->
-    <view class="articles-section">
-      <view class="section-header">
-        <text class="section-title">精选文章</text>
-        <text class="section-more" @tap="goToMoreArticles">查看更多</text>
-      </view>
-      <view v-if="articles.length > 0" class="articles-list">
-        <view v-for="(article, index) in articles" :key="index" class="article-item" @tap="goToArticle(article)">
-          <image class="article-cover" :src="article?.image || ''" mode="aspectFill" />
-          <view class="article-content">
-            <text :text="article.title || '暂无标题'" :lines="1" color="#000" bold size="16px" />
-            <text :text="article.description" class="h-auto" :lines="2" color="#000" size="12px" />
-            <text class="article-title">{{ article.title || '暂无摘要' }}</text>
-            <text class="article-summary">{{ article.description || '暂无摘要' }}</text>
-            <view class="article-footer">
-              <text class="article-author">{{ article.author || 'Anonymous' }}</text>
-              <text class="article-stats">{{ formatDate(article.published_date) }}</text>
-              <text class="article-stats">{{ article.views }}人已阅读</text>
+      <!-- 精选文章 -->
+      <view class="articles-section">
+        <view class="section-header">
+          <text class="section-title">精选文章</text>
+          <text class="section-more" @tap="goToMoreArticles">查看更多</text>
+        </view>
+        <view v-if="articles.length > 0" class="articles-list">
+          <view v-for="(article, index) in articles" :key="index" class="article-item" @tap="goToArticle(article)">
+            <image class="article-cover" :src="article?.image || ''" mode="aspectFill" />
+            <view class="article-content">
+              <text :text="article.title || '暂无标题'" :lines="1" color="#000" bold size="16px" />
+              <text :text="article.description" class="h-auto" :lines="2" color="#000" size="12px" />
+              <text class="article-title">{{ article.title || '暂无摘要' }}</text>
+              <text class="article-summary">{{ article.description || '暂无摘要' }}</text>
+              <view class="article-footer">
+                <text class="article-author">{{ article.author || 'Anonymous' }}</text>
+                <text class="article-stats">{{ formatDate(article.published_date) }}</text>
+                <text class="article-stats">{{ article.views }}人已阅读</text>
+              </view>
             </view>
           </view>
         </view>
-      </view>
-      <!-- 空状态 -->
-      <view v-else class="empty-state">
-        <text class="empty-text">暂无文章</text>
+        <!-- 空状态 -->
+        <view v-else class="empty-state">
+          <text class="empty-text">暂无文章</text>
+        </view>
       </view>
     </view>
+    <GlobalLoading :loading="isGlobalLoading" />
   </view>
 </template>
 
@@ -108,7 +119,10 @@
 import type { Article, Banner, Product } from '@/api/home'
 import { onMounted, ref } from 'vue'
 import { getBanners, getHomeData } from '@/api/home'
+import GlobalLoading from '@/components/GlobalLoading.vue'
 import NavBarSearch from '@/components/NavBarSearch.vue'
+import { useUserStore } from '@/store/user'
+import HomeSkeleton from './components/HomeSkeleton.vue'
 
 definePage({
   type: 'home',
@@ -116,6 +130,9 @@ definePage({
 })
 
 /* 状态 */
+const userStore = useUserStore()
+const user = computed(() => userStore.userInfo)
+
 const banners = ref<Banner[]>([]) // 轮播图数据
 const bannersMid = ref<Banner[]>([]) // 中间轮播图数据
 const navItems = ref<{ id: number, name: string, icon: string, url: string }[]>([]) // 分类标签数据
@@ -124,6 +141,9 @@ const products = ref<Product[]>([])
 const articles = ref<Article[]>([])
 const hot_products = ref<Product[]>([])
 const activeCategory = ref<number | null>(null) // 激活的分类标签
+
+const isLoading = ref(true)
+const isGlobalLoading = ref(true)
 
 /* 跳转方法 */
 const goToSearch = () => uni.navigateTo({ url: '/pages/search/index' })
@@ -136,6 +156,7 @@ const onBannerTap = (banner: Banner) => {
 }
 const onNavTap = (nav: { url: string }) => uni.navigateTo({ url: nav.url })
 const goToMore = () => uni.navigateTo({ url: '/pages/product/list?type=recommend' })
+const goAlert = (msg: string) => uni.showModal({ title: '傻逼一个嘻嘻嘻', content: msg, icon: 'none', duration: 2000 })
 /** 跳转至商品详情 */
 const goToProduct = (product: { id: number }) => uni.navigateTo({ url: `/pages/product/detail?id=${product.id}` })
 const goToArticle = (art: Article) => uni.navigateTo({ url: `/pages/article/detail?id=${art.id}` })
@@ -192,6 +213,9 @@ const goToCategoryDetail = (categoryId: number | null) => {
 
 /** 首页所有数据加载 */
 const loadHomeData = async () => {
+  if (banners.value.length === 0) {
+    isLoading.value = true
+  }
   try {
     const res = await getHomeData()
     // 轮播数据
@@ -345,12 +369,17 @@ const loadHomeData = async () => {
     // 演示时使用截止-----
     uni.showToast({ title: e?.message || '首页数据获取失败', icon: 'none' })
   }
+  finally {
+    isLoading.value = false
+    uni.stopPullDownRefresh()
+  }
 }
 onMounted(() => {
-  // loadHomeData()
+  isGlobalLoading.value = false
+  loadHomeData()
 })
 onShow(() => {
-  loadHomeData()
+  // loadHomeData()
 })
 </script>
 
@@ -425,11 +454,12 @@ onShow(() => {
   padding: 24rpx;
   display: flex;
   align-items: center;
-  justify-content: space-between;
 }
 .greet-left {
+  flex: 1;
   display: flex;
   align-items: center;
+  gap: 16rpx;
 }
 .greet-avatar {
   width: 72rpx;
@@ -439,9 +469,10 @@ onShow(() => {
   background: #333;
 }
 .greet-texts {
+  flex: 1;
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  width: 520rpx;
 }
 .greet-hey {
   font-size: 28rpx;
@@ -450,11 +481,6 @@ onShow(() => {
 .greet-level {
   font-size: 22rpx;
   color: #cfcfcf;
-  margin-top: 6rpx;
-}
-.greet-right {
-  font-size: 36rpx;
-  color: #aaa;
 }
 
 /* 活动卡片 */
@@ -484,6 +510,7 @@ onShow(() => {
   display: flex;
   flex-direction: column;
   flex-basis: 50%;
+  padding: 24rpx 0;
 }
 .promo-title {
   font-size: 30rpx;
@@ -491,7 +518,8 @@ onShow(() => {
   color: #2c2c2c;
 }
 .promo-sub {
-  font-size: 22rpx;
+  font-size: 24rpx;
+  text-align: center;
   color: #666;
   margin-top: 6rpx;
 }

@@ -1,131 +1,135 @@
 <template>
-  <z-paging
-    ref="paging"
-    v-model="cartItems"
-    :paging-style="{ height: 'calc(100vh - 50px - env(safe-area-inset-bottom))' }"
-    :auto-show-back-to-top="true"
-    bg-color="#f5f5f5"
-    @query="queryList"
-  >
-    <!-- 空数据/未登录状态插槽 -->
-    <template #empty>
-      <!-- 未登录状态 -->
-      <view v-if="!hasLogin" class="empty-cart">
-        <text class="empty-icon">🔒</text>
-        <text class="empty-text">您还未登录</text>
-        <text class="empty-desc">登录后查看购物车内容</text>
-        <view class="login-btn" @tap="goToLogin">
-          去登录
+  <view class="h-full">
+    <CartSkeleton v-if="isFirstLoad" />
+    <z-paging
+      v-show="!isFirstLoad"
+      ref="paging"
+      v-model="cartItems"
+      :paging-style="{ height: 'calc(100vh - 50px - env(safe-area-inset-bottom))' }"
+      :auto-show-back-to-top="true"
+      bg-color="#f5f5f5"
+      @query="queryList"
+    >
+      <!-- 空数据/未登录状态插槽 -->
+      <template #empty>
+        <!-- 未登录状态 -->
+        <view v-if="!hasLogin" class="empty-cart">
+          <text class="empty-icon">🔒</text>
+          <text class="empty-text">您还未登录</text>
+          <text class="empty-desc">登录后查看购物车内容</text>
+          <view class="login-btn" @tap="goToLogin">
+            去登录
+          </view>
         </view>
-      </view>
 
-      <!-- 空购物车状态 -->
-      <view v-else class="empty-cart">
-        <text class="empty-icon">🛒</text>
-        <text class="empty-text">购物车是空的</text>
-        <text class="empty-desc">快去添加喜欢的商品吧~</text>
-        <view class="go-shop-btn" @tap="navigateTo('/pages/index/index')">
-          去购物
+        <!-- 空购物车状态 -->
+        <view v-else class="empty-cart">
+          <text class="empty-icon">🛒</text>
+          <text class="empty-text">购物车是空的</text>
+          <text class="empty-desc">快去添加喜欢的商品吧~</text>
+          <view class="go-shop-btn" @tap="navigateTo('/pages/index/index')">
+            去购物
+          </view>
         </view>
-      </view>
-    </template>
+      </template>
 
-    <!-- 商品列表 -->
-    <view class="cart-items" @click="handleSwipeClick($event)">
-      <view
-        v-for="(item, index) in cartItems"
-        :key="item.id"
-        class="cart-item-container"
-      >
-        <!-- 滑动卡片 -->
-        <sar-swipe-action
-          :options="swipeOptions"
-          :threshold="0.3"
-          :auto-close="true"
-          :visible="((activeSwipeIndex === index) as any)"
-          @update:visible="(val) => handleVisibleChange(val, index)"
-          @click="handleSwipeClick($event, index)"
+      <!-- 商品列表 -->
+      <view class="cart-items" @click="handleSwipeClick($event)">
+        <view
+          v-for="(item, index) in cartItems"
+          :key="item.id"
+          class="cart-item-container"
         >
-          <view class="cart-item" @tap.stop="closeOtherSwipes(index)">
-            <!-- 复选框（在卡片外部） -->
-            <view class="checkbox-container" @tap.stop="toggleCheck(index)">
-              <view
-                class="checkbox-icon"
-                :class="{ checked: item.checked }"
-              />
-            </view>
-            <image class="item-image" :src="getFullImageUrl(item.product_image)" mode="aspectFill" />
-            <view class="item-content">
-              <view class="item-top">
-                <text class="item-name">{{ item.product_name }}</text>
-                <image class="h-[40rpx] w-[40rpx]" src="@/static/delete.svg" mode="aspectFill" @click="removeItem(item.id)" />
+          <!-- 滑动卡片 -->
+          <sar-swipe-action
+            :options="swipeOptions"
+            :threshold="0.3"
+            :auto-close="true"
+            :visible="((activeSwipeIndex === index) as any)"
+            @update:visible="(val) => handleVisibleChange(val, index)"
+            @click="handleSwipeClick($event, index)"
+          >
+            <view class="cart-item" @tap.stop="closeOtherSwipes(index)">
+              <!-- 复选框（在卡片外部） -->
+              <view class="checkbox-container" @tap.stop="toggleCheck(index)">
+                <view
+                  class="checkbox-icon"
+                  :class="{ checked: item.checked }"
+                />
               </view>
+              <image class="item-image" :src="getFullImageUrl(item.product_image)" mode="aspectFill" />
+              <view class="item-content">
+                <view class="item-top">
+                  <text class="item-name">{{ item.product_name }}</text>
+                  <image class="h-[40rpx] w-[40rpx]" src="@/static/delete.svg" mode="aspectFill" @click="removeItem(item.id)" />
+                </view>
 
-              <view class="item-info">
-                <text class="stock-text">库存: {{ item.stock }}</text>
-              </view>
+                <view class="item-info">
+                  <text class="stock-text">库存: {{ item.stock }}</text>
+                </view>
 
-              <view class="item-bottom">
-                <text class="item-price">¥{{ CartUtils.formatPrice(item.price) }}</text>
-                <view class="quantity-control">
-                  <view class="quantity-btn minus" @tap.stop="decreaseQuantity(index)">
-                    -
-                  </view>
-                  <text class="quantity-value">{{ item.quantity }}</text>
-                  <view class="quantity-btn plus" @tap.stop="increaseQuantity(index)">
-                    +
+                <view class="item-bottom">
+                  <text class="item-price">¥{{ CartUtils.formatPrice(item.price) }}</text>
+                  <view class="quantity-control">
+                    <view class="quantity-btn minus" @tap.stop="decreaseQuantity(index)">
+                      -
+                    </view>
+                    <text class="quantity-value">{{ item.quantity }}</text>
+                    <view class="quantity-btn plus" @tap.stop="increaseQuantity(index)">
+                      +
+                    </view>
                   </view>
                 </view>
               </view>
             </view>
-          </view>
-          <template #right="{ hide }">
-            <sar-button
-              theme="danger"
-              square
-              inline
-              style="height: 100%"
-              @click="onClick('删除', hide)"
-            >
-              删除
-            </sar-button>
-          </template>
-        </sar-swipe-action>
+            <template #right="{ hide }">
+              <sar-button
+                theme="danger"
+                square
+                inline
+                style="height: 100%"
+                @click="onClick('删除', hide)"
+              >
+                删除
+              </sar-button>
+            </template>
+          </sar-swipe-action>
+        </view>
       </view>
-    </view>
 
-    <!-- 底部结算栏插槽 -->
-    <template #bottom>
-      <view v-if="hasLogin && !isEmpty" class="cart-footer">
-        <view class="total-info">
-          <view class="select-all-container" @tap="toggleSelectAll">
-            <view
-              class="checkbox-icon"
-              :class="{ checked: isAllSelected }"
-            />
-            <text class="select-all-text">全选</text>
+      <!-- 底部结算栏插槽 -->
+      <template #bottom>
+        <view v-if="hasLogin && !isEmpty" class="cart-footer">
+          <view class="total-info">
+            <view class="select-all-container" @tap="toggleSelectAll">
+              <view
+                class="checkbox-icon"
+                :class="{ checked: isAllSelected }"
+              />
+              <text class="select-all-text">全选</text>
+            </view>
+            <view class="total-price-container">
+              <text class="total-label">总计</text>
+              <text class="total-price">¥{{ totalPrice }}</text>
+              <text class="total-count">({{ totalItems }}件)</text>
+            </view>
           </view>
-          <view class="total-price-container">
-            <text class="total-label">总计</text>
-            <text class="total-price">¥{{ totalPrice }}</text>
-            <text class="total-count">({{ totalItems }}件)</text>
+          <view v-if="!isEmpty" class="clear-btn" @tap="clearAllItems">
+            <text>清空</text>
+          </view>
+          <view class="checkout-btn" @tap="checkout">
+            结算
           </view>
         </view>
-        <view v-if="!isEmpty" class="clear-btn" @tap="clearAllItems">
-          <text>清空</text>
-        </view>
-        <view class="checkout-btn" @tap="checkout">
-          结算
-        </view>
-      </view>
-    </template>
-  </z-paging>
+      </template>
+    </z-paging>
+  </view>
 </template>
 
 <script lang="ts" setup>
 import type { CartItem } from '@/api/cart'
 import { onShow } from '@dcloudio/uni-app'
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import {
   CartUtils,
   clearCart,
@@ -134,6 +138,7 @@ import {
   updateCartItem,
 } from '@/api/cart'
 import { useTokenStore } from '@/store/token'
+import CartSkeleton from './components/CartSkeleton.vue'
 
 interface CartItemWithStatus extends CartItem {
   checked: boolean
@@ -154,6 +159,7 @@ const paging = ref<any>(null)
 const cartItems = ref<CartItemWithStatus[]>([])
 const isEmpty = computed(() => cartItems.value.length === 0)
 const activeSwipeIndex = ref<number | null>(null)
+const isFirstLoad = ref(true)
 
 // 检查登录状态
 const hasLogin = computed(() => tokenStore.hasLogin)
@@ -200,19 +206,19 @@ const totalItems = computed(() => {
 
 // z-paging 数据加载
 const queryList = async (pageNo: number, _pageSize: number) => {
-  if (!hasLogin.value) {
-    paging.value?.complete([])
-    return
-  }
-
-  // 这里的接口 getCartItems 似乎是一次性返回所有数据
-  // 如果是第2页及以上，直接返回空数组，告诉 z-paging 没有更多数据了
-  if (pageNo > 1) {
-    paging.value?.complete([])
-    return
-  }
-
   try {
+    if (!hasLogin.value) {
+      paging.value?.complete([])
+      return
+    }
+
+    // 这里的接口 getCartItems 似乎是一次性返回所有数据
+    // 如果是第2页及以上，直接返回空数组，告诉 z-paging 没有更多数据了
+    if (pageNo > 1) {
+      paging.value?.complete([])
+      return
+    }
+
     const response = await getCartItems()
     if (response.code === 200) {
       // 假设接口一次性返回所有数据
@@ -252,6 +258,9 @@ const queryList = async (pageNo: number, _pageSize: number) => {
       title: error.message || '获取购物车失败',
       icon: 'none',
     })
+  }
+  finally {
+    isFirstLoad.value = false
   }
 }
 
@@ -503,7 +512,7 @@ onMounted(() => {
 
 onShow(() => {
   // 每次显示页面时都重新加载购物车数据
-  paging.value?.reload()
+  paging.value?.refresh()
 })
 
 onUnmounted(() => {

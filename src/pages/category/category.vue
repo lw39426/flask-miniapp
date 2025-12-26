@@ -1,91 +1,95 @@
 <template>
-  <view class="category-page">
-    <!-- 搜索栏 -->
-    <view style="background: #ffffff; width: 100%; box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);">
-      <NavBarSearch :fixed="false" bg-color="#e5e5e5" @click="goToSearch" />
-    </view>
-
-    <view class="category-content">
-      <!-- 左侧分类导航 -->
-      <view class="category-nav">
-        <scroll-view class="nav-scroll" :scroll-y="true">
-          <view
-            v-for="(category, index) in categories"
-            :key="index"
-            class="nav-item"
-            :class="{ active: currentCategory === index }"
-            @tap="switchCategory(index)"
-          >
-            <text class="nav-text">{{ category.name }}</text>
-          </view>
-        </scroll-view>
+  <view class="h-full">
+    <CategorySkeleton v-if="loading && categories.length === 0" />
+    <!-- <CategorySkeleton v-if="true" /> -->
+    <view v-else class="category-page">
+      <!-- 搜索栏 -->
+      <view style="background: #ffffff; width: 100%; box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);">
+        <NavBarSearch :fixed="false" bg-color="#e5e5e5" @click="goToSearch" />
       </view>
 
-      <!-- 右侧子分类内容 -->
-      <view v-if="false" class="category-detail">
-        <scroll-view class="detail-scroll" :scroll-y="true">
-          <!-- 加载状态 -->
-          <view v-if="loading" class="loading-container">
-            <text class="loading-text">加载中...</text>
-          </view>
-          <!-- 分类横幅 -->
-          <view v-if="currentCategoryData.id && currentCategoryData.imageUrl" class="category-banner">
-            <image
-              class="banner-image"
-              :src="currentCategoryData.imageUrl"
-              mode="aspectFill"
-              @tap="onBannerTap"
-            />
-          </view>
+      <view class="category-content">
+        <!-- 左侧分类导航 -->
+        <view class="category-nav">
+          <scroll-view class="nav-scroll" :scroll-y="true">
+            <view
+              v-for="(category, index) in categories"
+              :key="index"
+              class="nav-item"
+              :class="{ active: currentCategory === index }"
+              @tap="switchCategory(index)"
+            >
+              <text class="nav-text">{{ category.name }}</text>
+            </view>
+          </scroll-view>
+        </view>
 
-          <!-- 子分类网格 -->
-          <view v-if="currentCategoryData.children.length > 0" class="subcategory-section">
-            <text class="section-title">全部分类</text>
-            <view class="subcategory-grid">
-              <view
-                v-for="(sub, index) in currentCategoryData.children"
-                :key="sub.id + index"
-                class="subcategory-item"
-                @tap="goToSubCategory(sub)"
-              >
-                <image class="subcategory-image" :src="sub.imageUrl" mode="aspectFill" />
-                <text class="subcategory-name">{{ sub.name }}</text>
+        <!-- 右侧子分类内容 -->
+        <view class="category-detail">
+          <scroll-view class="detail-scroll" :scroll-y="true">
+            <!-- 加载状态 -->
+            <view v-if="loading" class="loading-container">
+              <text class="loading-text">加载中...</text>
+            </view>
+            <!-- 分类横幅 -->
+            <view v-if="currentCategoryData.id && currentCategoryData.imageUrl" class="category-banner">
+              <image
+                class="banner-image"
+                :src="currentCategoryData.imageUrl"
+                mode="aspectFill"
+                @tap="onBannerTap"
+              />
+            </view>
+
+            <!-- 子分类网格 -->
+            <view v-if="currentCategoryData.children.length > 0" class="subcategory-section">
+              <text class="section-title">全部分类</text>
+              <view class="subcategory-grid">
+                <view
+                  v-for="(sub, index) in currentCategoryData.children"
+                  :key="sub.id + index"
+                  class="subcategory-item"
+                  @tap="goToSubCategory(sub)"
+                >
+                  <image class="subcategory-image" :src="sub.imageUrl" mode="aspectFill" />
+                  <text class="subcategory-name">{{ sub.name }}</text>
+                </view>
               </view>
             </view>
-          </view>
 
-          <!-- 热门商品瀑布流 -->
-          <view v-if="currentCategoryData.id && hotProducts[currentCategoryData.id]?.length" class="hot-products-section">
-            <text class="section-title">热门商品</text>
+            <!-- 热门商品瀑布流 -->
+            <view v-if="currentCategoryData.id && hotProducts[currentCategoryData.id]?.length" class="hot-products-section">
+              <text class="section-title">热门商品</text>
 
-            <!-- 瀑布流容器 -->
-            <view class="waterfall-container">
-              <view v-for="(column, colIndex) in waterfallColumns" :key="colIndex" class="waterfall-column">
-                <view
-                  v-for="product in column"
-                  :key="product.id"
-                  class="waterfall-item"
-                  @tap="goToProduct(product)"
-                >
-                  <image
-                    class="waterfall-image"
-                    :src="product.main_image"
-                    mode="widthFix"
-                    @load="onImageLoad"
-                    @error="onImageError"
-                  />
-                  <view class="waterfall-info">
-                    <text class="waterfall-title">{{ product.name }}</text>
-                    <view class="waterfall-price-row">
-                      <text class="waterfall-price">¥{{ product.price }}</text>
-                      <text v-if="product.sales" class="waterfall-sales">已售{{ product.sales }}</text>
+              <!-- 瀑布流容器 -->
+              <view class="waterfall-container">
+                <view v-for="(column, colIndex) in waterfallColumns" :key="colIndex" class="waterfall-column">
+                  <view
+                    v-for="product in column"
+                    :key="product.id"
+                    class="waterfall-item"
+                    @tap="goToProduct(product)"
+                  >
+                    <image
+                      class="waterfall-image"
+                      :src="product.main_image"
+                      mode="widthFix"
+                      @load="onImageLoad"
+                      @error="onImageError"
+                    />
+                    <view class="waterfall-info">
+                      <text class="waterfall-title">{{ product.name }}</text>
+                      <view class="waterfall-price-row">
+                        <text class="waterfall-price">¥{{ product.price }}</text>
+                        <text v-if="product.sales" class="waterfall-sales">已售{{ product.sales }}</text>
+                      </view>
                     </view>
                   </view>
                 </view>
               </view>
             </view>
-          </view>
-        </scroll-view>
+          </scroll-view>
+        </view>
       </view>
     </view>
   </view>
@@ -96,6 +100,7 @@ import type { Category, Product } from '@/api/category'
 import { computed, onMounted, ref } from 'vue'
 import { getCategoryList, getCategoryProducts } from '@/api/category'
 import NavBarSearch from '@/components/NavBarSearch.vue'
+import CategorySkeleton from './components/CategorySkeleton.vue'
 
 definePage({
   style: {
@@ -107,7 +112,7 @@ definePage({
 // 响应式数据
 const currentCategory = ref(0)
 const categories = ref<Category[]>([])
-const loading = ref(false)
+const loading = ref(true)
 const hotProducts = ref<Record<number, Product[]>>({})
 const waterfallColumns = ref<Product[][]>([[], []]) // 瀑布流数据
 const columnHeights = ref<number[]>([0, 0])
@@ -278,7 +283,7 @@ const goToProduct = (product: Product) => {
 
 // 页面加载时获取数据
 onMounted(() => {
-  loadCategories()
+  // Initial load logic if needed
 })
 onShow(() => {
   loadCategories()

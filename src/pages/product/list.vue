@@ -25,7 +25,14 @@
 
     <!-- 商品列表 -->
     <scroll-view class="product-scroll" :scroll-y="true" @scrolltolower="loadMore">
-      <view class="product-grid">
+      <!-- 骨架屏 -->
+      <view v-if="loading && products.length === 0" class="product-grid">
+        <view v-for="i in 6" :key="i" class="product-item">
+          <ProductCardSkeleton image-height="300rpx" />
+        </view>
+      </view>
+
+      <view v-else class="product-grid">
         <view
           v-for="product in products"
           :key="product.id"
@@ -44,7 +51,7 @@
       </view>
 
       <!-- 加载更多 -->
-      <view v-if="hasMore" class="load-more">
+      <view v-if="hasMore && products.length > 0" class="load-more">
         <text class="load-text">{{ loading ? '加载中...' : '上拉加载更多' }}</text>
       </view>
 
@@ -65,6 +72,7 @@
 import type { Product } from '@/api/category'
 import { onMounted, ref } from 'vue'
 import { getCategoryProducts, searchProducts } from '@/api/category'
+import ProductCardSkeleton from '@/components/skeleton/ProductCardSkeleton.vue'
 
 definePage({
   style: {
