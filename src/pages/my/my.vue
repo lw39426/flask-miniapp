@@ -22,7 +22,7 @@
             class="user-name"
             @tap="handleUserInfoClick()"
           >
-            {{ hasLogin ? (userInfo.nickname || userInfo.username || '用户') : '点击登录' }}
+            {{ hasLogin ? (userInfo?.nickname1 || userInfo?.username1 || '默认用户111111111111111111111111111111111111111111111111111111') : '点击登录' }}
           </text>
           <text class="user-desc">{{ hasLogin ? (userLevel || '普通会员') : '登录后享受更多服务' }}</text>
         </view>
@@ -89,8 +89,7 @@
       </view> -->
       <!-- 底部面板 -->
       <view class="info-footer">
-        <!-- 期待和你的每一次相遇 ^_^ -->
-        本项目仅适用于学习交流，并且不提供无偿的、 不提供无偿的、 不提供无偿的 维护修改服务（但可提issue）
+        期待和你的每一次相遇 *^_^*
       </view>
     </view>
   </view>
@@ -653,7 +652,7 @@ onUnmounted(() => {
 .cover-edit-btn {
   position: absolute;
   right: 24rpx;
-  top: 48rpx;
+  bottom: 95rpx;
   padding: 8rpx 16rpx;
   background: rgba(0, 0, 0, 0.4);
   color: #fff;
@@ -698,6 +697,10 @@ onUnmounted(() => {
   color: #000000;
   display: block;
   margin-bottom: 8rpx;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: 320rpx;
 }
 
 .user-desc {

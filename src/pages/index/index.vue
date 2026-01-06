@@ -91,16 +91,32 @@
         </view>
         <view v-if="articles.length > 0" class="articles-list">
           <view v-for="(article, index) in articles" :key="index" class="article-item" @tap="goToArticle(article)">
-            <image class="article-cover" :src="article?.image || ''" mode="aspectFill" />
-            <view class="article-content">
-              <text :text="article.title || '暂无标题'" :lines="1" color="#000" bold size="16px" />
-              <text :text="article.description" class="h-auto" :lines="2" color="#000" size="12px" />
-              <text class="article-title">{{ article.title || '暂无摘要' }}</text>
-              <text class="article-summary">{{ article.description || '暂无摘要' }}</text>
+            <!-- 左侧：图片 -->
+            <view class="card-left">
+              <!-- mode="aspectFill" 保证图片填满且不拉伸变形 -->
+              <image
+                class="article-img"
+                :src="article.image || '/static/default-cover.png'"
+                mode="aspectFill"
+                onerror="this.src='/static/images/boy.jpg'"
+              />
+            </view>
+
+            <!-- 右侧：内容区域 -->
+            <view class="card-right">
+              <!-- 1. 标题 (单行省略) -->
+              <text class="article-title">{{ article.title || '暂无标题' }}</text>
+              <!-- 2. 简介 (两行省略) -->
+              <text class="article-desc">
+                {{ article.description || '暂无简介内容...' }}
+              </text>
+
+              <!-- 3. 底部信息 (作者、时间、阅读量) -->
               <view class="article-footer">
-                <text class="article-author">{{ article.author || 'Anonymous' }}</text>
-                <text class="article-stats">{{ formatDate(article.published_date) }}</text>
-                <text class="article-stats">{{ article.views }}人已阅读</text>
+                <text class="footer-text">{{ article.author || '匿名' }}</text>
+                <!-- 这里的 formatDate 请确保你在 script 里定义了，或者直接用 article.date -->
+                <text class="footer-text">{{ article.published_date }}</text>
+                <text class="footer-text">{{ article.views || 0 }}人已阅读</text>
               </view>
             </view>
           </view>
@@ -579,11 +595,10 @@ onShow(() => {
 }
 
 .article-item {
-  display: flex;
-  align-items: flex-start;
-  padding: 20rpx 0;
-  border-bottom: 1rpx solid #f0f0f0;
-  transition: background-color 0.2s ease;
+  display: flex; /* 开启 Flex 布局，让图片和文字左右排列 */
+  padding: 20rpx 0; /* 卡片内边距 */
+  background-color: #fff;
+  border-bottom: 1rpx solid #f0f0f0; /* 下划线，不需要可去掉 */
 }
 
 .article-item:last-child {
@@ -603,55 +618,65 @@ onShow(() => {
   margin-right: 24rpx;
 }
 
-.article-content {
-  flex: 1;
+/* 左侧图片样式 */
+.card-left {
+  margin-right: 20rpx; /* 图片和右边文字的间距 */
+}
+
+.article-img {
+  width: 200rpx; /* 根据截图推测的宽度 */
+  height: 140rpx; /* 根据截图推测的高度 */
+  border-radius: 12rpx; /* 图片圆角 */
+  background-color: #eee; /* 图片未加载时的占位色 */
+}
+
+/* 右侧内容容器 */
+.card-right {
+  flex: 1; /* 占满剩余宽度 */
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  height: 156rpx;
+  flex-direction: column; /* 内容从上到下排列 */
+  justify-content: space-between; /* 标题顶头，底部信息沉底 */
+  min-height: 140rpx; /* 必须和图片高度一致，才能实现 space-between */
+  min-width: 0; /* 关键：防止 flex 子项被内容撑开，解决破页问题 */
 }
 
+/* 1. 标题样式 */
 .article-title {
-  font-size: 26rpx;
+  font-size: 32rpx;
   font-weight: bold;
-  color: #323232;
-  line-height: 1.5;
-  margin-bottom: 6rpx;
+  color: #333;
+
+  /* 单行省略号 */
   overflow: hidden;
+  white-space: nowrap;
   text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  flex: 1;
-}
-.article-summary {
-  font-size: 24rpx;
-  color: #666666;
-  line-height: 1.4;
-  margin-bottom: 16rpx;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
 }
 
+/* 2. 简介样式 */
+.article-desc {
+  font-size: 24rpx;
+  color: #666;
+  line-height: 1.4;
+  margin-top: 8rpx;
+
+  /* 多行省略号 (核心代码) */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2; /* 限制显示2行 */
+  overflow: hidden;
+}
+
+/* 3. 底部信息样式 */
 .article-footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-top: auto;
+  justify-content: space-between; /* 让三个信息分散对齐，或者用 gap */
+  margin-top: auto; /* 确保沉底 */
 }
 
-.article-author {
-  font-size: 24rpx;
-  color: #999999;
-  font-weight: 400;
-}
-
-.article-stats {
-  font-size: 24rpx;
-  color: #999999;
+.footer-text {
+  font-size: 20rpx;
+  color: #999;
 }
 
 /* 空状态 */

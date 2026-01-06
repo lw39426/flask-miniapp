@@ -162,7 +162,7 @@ const confirmLogout = () => {
 }
 
 .setting-section {
-  margin-top: 20rpx;
+  //margin-top: 20rpx;
 }
 
 .section-title {

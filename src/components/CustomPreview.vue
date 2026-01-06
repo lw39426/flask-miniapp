@@ -20,6 +20,10 @@
       <button class="action-btn change-btn" @click="handleChooseImage">
         更换图片
       </button>
+      <!-- 取消更换按钮 -->
+      <button class="action-btn save-btn" @click="closePreview">
+        取消更换
+      </button>
     </view>
   </view>
 </template>
@@ -255,13 +259,16 @@ const handleChooseImage = () => {
 
 /* 底部操作区域 */
 .preview-footer {
+  display: flex;
+  justify-content: space-between;
   width: 100%;
   padding: 30rpx;
   box-sizing: border-box;
 }
 
 .action-btn {
-  width: 100%;
+  display: inline-block;
+  width: 42%;
   /* 您的按钮样式 */
   background-color: #ffffff;
   color: #000000;
