@@ -92,6 +92,7 @@ export interface IUpdatePassword {
 
 /**
  * 判断是否为单Token响应
+ * @description 单Token响应包含 token 和 expiresIn 字段，不包含 refresh_token 字段
  * @param tokenRes 登录响应数据
  * @returns 是否为单Token响应
  */
@@ -101,6 +102,7 @@ export function isSingleTokenRes(tokenRes: IAuthLoginRes): tokenRes is ISingleTo
 
 /**
  * 判断是否为双Token响应
+ * 双Token响应包含 access_token、refresh_token 字段
  * @param tokenRes 登录响应数据
  * @returns 是否为双Token响应
  */

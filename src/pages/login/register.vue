@@ -73,7 +73,7 @@ const sendCode = () => {
 }
 
 // 提交注册
-const handleRegister = () => {
+const handleRegister = async () => {
   // 表单验证
   if (!form.phone) {
     uni.showToast({ title: '请输入手机号', icon: 'none' })
@@ -101,24 +101,30 @@ const handleRegister = () => {
     return
   }
 
-  // 执行注册逻辑
-  console.log('执行注册:', form)
-  // TODO: 调用注册 API
-  tokenStore.register(form).then((res) => {
-    console.log('注册', res)
-  })
+  try {
+    uni.showLoading({ title: '注册中...' })
+    await tokenStore.register(form)
+    uni.hideLoading()
 
-  uni.showToast({
-    title: '注册成功',
-    icon: 'success',
-  })
-
-  // 注册成功后跳转到登录页
-  setTimeout(() => {
-    uni.redirectTo({
-      url: LOGIN_PAGE,
+    uni.showToast({
+      title: '注册成功',
+      icon: 'success',
     })
-  }, 1500)
+
+    // 注册成功后跳转到登录页
+    setTimeout(() => {
+      uni.redirectTo({
+        url: LOGIN_PAGE,
+      })
+    }, 1500)
+  }
+  catch (error: any) {
+    uni.hideLoading()
+    uni.showToast({
+      title: error.message || '注册失败，请重试',
+      icon: 'none'
+    })
+  }
 }
 
 // 返回登录页

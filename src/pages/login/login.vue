@@ -142,15 +142,24 @@
     </view>
 
     <!-- 快捷登录 -->
-    <view v-if="false" class="extra-links">
-      <!-- <view class="i-carbon-logo-wechat text-4xl text-green" /> -->
+    <view class="extra-links">
       <sar-button
+        v-if="hasWechatProvider"
         inline
-        root-style="margin-left: 10rpx"
+        root-style="margin: 0 10rpx"
         background="#2dcca7"
-        @tap="quickLogin"
+        @tap="handleWxLogin"
       >
-        快捷登录
+        微信登录
+      </sar-button>
+      <sar-button
+        v-if="hasAlipayProvider"
+        inline
+        root-style="margin: 0 10rpx"
+        background="#1677ff"
+        @tap="handleAlipayLogin"
+      >
+        支付宝登录
       </sar-button>
       <!-- #ifdef MP-WEIXIN -->
       <sar-button
@@ -389,94 +398,55 @@ const getAvailableOAuthProviders = () => new Promise<string[]>((resolve) => {
   })
 })
 
+const providers = ref<string[]>([])
+const hasWechatProvider = computed(() => providers.value.includes('weixin'))
+const hasAlipayProvider = computed(() => providers.value.includes('alipay'))
+
 /**
- * 调用原生 OAuth 登录并通过后端换取 token
- * 注意：当前通过 tokenStore.login 统一入口传递 { type: 'oauth', provider, code, iv, encryptedData }
- * 如果后端/Store需要改为专门接口，可在此函数中替换为你的 API 调用。
+ * 微信快捷登录
  */
-const doNativeOAuth = async (provider: 'weixin' | 'alipay' | any) => {
-  // 1. 原生登录，获取临时 code
-  const loginRes = await new Promise<any>((resolve, reject) => {
-    uni.login({
-      provider,
-      success: resolve,
-      fail: reject
-    })
-  })
-  console.log('wx原生登录结果:', loginRes)
-  const code = loginRes?.code
-  if (!code)
-    throw new Error('未获取到登录凭证 code')
-
-  // 2.（可选）获取用户信息（部分后端需要 iv、encryptedData）
-  let iv: string | undefined
-  let encryptedData: string | undefined
+const handleWxLogin = async () => {
   try {
-    const userInfoRes = await new Promise<any>((resolve, reject) => {
-      uni.getUserProfile({
-        provider,
-        desc: '用于完善会员资料',
-        success: resolve,
-        fail: reject
-      })
-    })
-    console.log('wx原生获取用户信息结果:', userInfoRes)
-    iv = userInfoRes?.iv
-    encryptedData = userInfoRes?.encryptedData
+    const res = await tokenStore.wxLogin()
+    console.log('微信快捷登录结果:', res)
+    if (res) {
+      setTimeout(() => {
+        const pages = getCurrentPages()
+        console.log('pages: ', pages)
+        if (pages.length > 1) {
+          uni.navigateBack()
+        }
+        else {
+          uni.switchTab({ url: '/pages/index/index' })
+        }
+      }, 1000)
+    }
   }
-  catch {
-    // 未授权用户信息不影响登录换取 token（依后端要求）
+  catch (error: any) {
+    // 错误已经在 store 中提示过，这里不需要重复提示
   }
-
-  // 3. 调用 tokenStore 统一登录入口（假定支持 type='oauth'）
-  const ok = await (tokenStore as any).login({
-    type: 'oauth',
-    provider,
-    code,
-    iv,
-    encryptedData
-  })
-  if (!ok)
-    throw new Error('登录失败，后端未返回有效凭证')
-  return true
 }
 
 /**
- * 快捷登录（原生微信/支付宝）
+ * 支付宝快捷登录
  */
-const quickLogin = async () => {
+const handleAlipayLogin = async () => {
   try {
-    uni.showLoading({ title: '登录中...' })
-    const providers = await getAvailableOAuthProviders()
-    const provider = providers.includes('weixin')
-      ? 'weixin'
-      : (providers.includes('alipay') ? 'alipay' : '')
-    if (!provider) {
-      uni.hideLoading()
-      uni.showToast({ title: '当前环境不支持原生快捷登录', icon: 'none' })
-      return
+    const res = await tokenStore.alipayLogin()
+    if (res) {
+      setTimeout(() => {
+        const pages = getCurrentPages()
+        if (pages.length > 1) {
+          uni.navigateBack()
+        }
+        else {
+          uni.switchTab({ url: '/pages/index/index' })
+        }
+      }, 1000)
     }
-    console.log('调用原生 OAuth 登录:', providers)
-
-    await doNativeOAuth(provider as any)
-    uni.hideLoading()
-    uni.showToast({ title: '登录成功', icon: 'success' })
-    // setTimeout(() => {
-    //   const pages = getCurrentPages()
-    //   if (pages.length > 1) {
-    //     uni.navigateBack()
-    //   } else {
-    //     uni.switchTab({ url: '/pages/index/index' })
-    //   }
-    // }, 1000)
   }
   catch (error: any) {
-    uni.hideLoading()
-    uni.showToast({
-      title: error?.message || '登录失败，请重试',
-      icon: 'error',
-      duration: 2500
-    })
+    // 错误已经在 store 中提示过，这里不需要重复提示
   }
 }
 
@@ -542,11 +512,12 @@ const handleWechatPhoneLogin = async (e) => {
 // 获取验证码
 const getCaptcha = async () => {
   const { data } = await getCode()
-  captchaImage.value = data.image // base64 字符串
-  form.captcha_key = data.captcha_key // 隐藏字段，随表单回传
+  captchaImage.value = data?.image // base64 字符串
+  form.captcha_key = data?.captcha_key // 隐藏字段，随表单回传
 }
-onLoad(() => {
+onLoad(async () => {
   getCaptcha()
+  providers.value = await getAvailableOAuthProviders()
 })
 </script>
 

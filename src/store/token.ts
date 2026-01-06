@@ -5,13 +5,13 @@ import type { IAuthLoginRes } from '@/api/types/login'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue' // 修复：导入 computed
 import {
+  alipayLogin as _alipayLogin,
   login as _login,
   loginByPhone as _loginByPhone,
   logout as _logout,
   refreshToken as _refreshToken,
   register as _register,
-  wxLogin as _wxLogin,
-  getWxCode,
+  wxLogin as _wxLogin
 } from '@/api/login'
 import { isDoubleTokenRes, isSingleTokenRes } from '@/api/types/login'
 import { isDoubleTokenMode } from '@/utils'
@@ -35,7 +35,7 @@ export const useTokenStore = defineStore(
   () => {
     // 定义用户信息
     const tokenInfo = ref<IAuthLoginRes>({ ...tokenInfoState })
-    // 设置用户信息
+    // 设置用户token信息
     const setTokenInfo = (val: IAuthLoginRes) => {
       tokenInfo.value = val
 
@@ -43,20 +43,26 @@ export const useTokenStore = defineStore(
       const now = Date.now()
       if (isSingleTokenRes(val)) {
         // 单token模式
-        const expireTime = now + val.expiresIn * 1000
+        // 没有字段就默认 7200s / 2h，保证用户不会立刻被踢
+        const expiresIn = Number(val.expiresIn) || 7200 // 2h
+        const expireTime = now + expiresIn * 1000
         uni.setStorageSync('accessTokenExpireTime', expireTime)
       }
       else if (isDoubleTokenRes(val)) {
         // 双token模式
-        const accessExpireTime = now + val.accessExpiresIn * 1000
-        const refreshExpireTime = now + val.refreshExpiresIn * 1000
+        // 没有字段就默认 7200s / 7 天，保证用户不会立刻被踢
+        const accessExpiresIn = Number(val.accessExpiresIn) || 7200 // 2h
+        const refreshExpiresIn = Number(val.refreshExpiresIn) || 604800 // 7d
+
+        const accessExpireTime = now + accessExpiresIn * 1000
+        const refreshExpireTime = now + refreshExpiresIn * 1000
         uni.setStorageSync('accessTokenExpireTime', accessExpireTime)
         uni.setStorageSync('refreshTokenExpireTime', refreshExpireTime)
       }
     }
 
     /**
-     * 判断token是否过期
+     * 判断token是否过期,根据当前时间和过期时间比较
      */
     const isTokenExpired = computed(() => {
       if (!tokenInfo.value) {
@@ -72,7 +78,7 @@ export const useTokenStore = defineStore(
     })
 
     /**
-     * 判断refreshToken是否过期
+     * 判断refreshToken是否过期，根据当前时间和过期时间比较
      */
     const isRefreshTokenExpired = computed(() => {
       if (!isDoubleTokenMode)
@@ -88,6 +94,7 @@ export const useTokenStore = defineStore(
 
     /**
      * 登录成功后处理逻辑
+     * @description 登录成功后，将token信息存储到本地，同时调用userStore获取用户信息
      * @param tokenInfo 登录返回的token信息
      */
     async function _toGetUserInfo(tokenInfo: IAuthLoginRes) {
@@ -103,13 +110,10 @@ export const useTokenStore = defineStore(
         // 获取token
         const res = await _register(registerForm)
         console.log('注册-res: ', res)
+        return res
       }
-      catch (error) {
-        uni.showToast({
-          title: error.message || '注册失败，请重试',
-          icon: 'error',
-          duration: 2500
-        })
+      catch (error: any) {
+        console.error('注册失败:', error)
         throw error
       }
     }
@@ -163,18 +167,25 @@ export const useTokenStore = defineStore(
 
     /**
      * 微信登录
-     * 有的时候后端会用一个接口返回token和用户信息，有的时候会分开2个接口，一个获取token，一个获取用户信息
-     * （各有利弊，看业务场景和系统复杂度），这里使用2个接口返回的来模拟
-     * @returns 登录结果
      */
     const wxLogin = async () => {
       try {
         // 获取微信小程序登录的code
-        const code = await getWxCode()
+        const loginRes = await new Promise<any>((resolve, reject) => {
+          uni.login({
+            provider: 'weixin',
+            success: resolve,
+            fail: reject,
+          })
+        })
+
+        uni.showLoading({ title: '登录中...' })
+        const code = loginRes.code
         console.log('微信登录-code: ', code)
-        const res = await _wxLogin(code)
+        const res = await _wxLogin({ code })
         console.log('微信登录-res: ', res)
         await _toGetUserInfo(res)
+        uni.hideLoading()
         uni.showToast({
           title: '登录成功',
           icon: 'success',
@@ -182,9 +193,48 @@ export const useTokenStore = defineStore(
         return res
       }
       catch (error) {
+        uni.hideLoading()
         console.error('微信登录失败:', error)
         uni.showToast({
           title: '微信登录失败，请重试',
+          icon: 'error',
+        })
+        throw error
+      }
+    }
+
+    /**
+     * 支付宝登录
+     */
+    const alipayLogin = async () => {
+      try {
+        // 获取支付宝小程序登录的code
+        const loginRes = await new Promise<any>((resolve, reject) => {
+          uni.login({
+            provider: 'qq',
+            success: resolve,
+            fail: reject,
+          })
+        })
+
+        uni.showLoading({ title: '登录中...' })
+        const code = loginRes.code
+        console.log('支付宝登录-code: ', code)
+        const res = await _alipayLogin({ code })
+        console.log('支付宝登录-res: ', res)
+        await _toGetUserInfo(res)
+        uni.hideLoading()
+        uni.showToast({
+          title: '登录成功',
+          icon: 'success',
+        })
+        return res
+      }
+      catch (error) {
+        uni.hideLoading()
+        console.error('支付宝登录失败:', error)
+        uni.showToast({
+          title: '支付宝登录失败，请重试',
           icon: 'error',
         })
         throw error
@@ -314,6 +364,7 @@ export const useTokenStore = defineStore(
       loginByPhone,
       register,
       wxLogin,
+      alipayLogin,
       logout,
       isTokenExpired,
 

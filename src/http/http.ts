@@ -24,7 +24,7 @@ export function http<T>(options: CustomRequestOptions) {
       // #endif
       // 响应成功
       success: async (res) => {
-        console.log('请求成功', res)
+        // console.log('请求成功', res)
         // 状态码 2xx，参考 axios 的设计
         if (res.statusCode >= 200 && res.statusCode < 300) {
           // 2.1  处理业务逻辑错误

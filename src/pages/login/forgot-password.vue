@@ -164,7 +164,7 @@
 
 <script lang="ts" setup>
 import { computed, reactive, ref } from 'vue'
-import { sendResetPasswordCode } from '@/api/login'
+import { resetPasswordApi, sendResetPasswordCode, verifyResetCode } from '@/api/login'
 
 definePage({
   style: {
@@ -280,21 +280,18 @@ const verifyPhone = async () => {
 
   try {
     uni.showLoading({ title: '验证中...' })
-    // const result = await verifyResetCode({
-    //   phone: form.phone,
-    //   code: form.code,
-    // })
-    const result = {
-      data: { resetToken: '123' }
-    }
+    const result = await verifyResetCode({
+      phone: form.phone,
+      code: form.code,
+    })
 
     // 保存重置令牌
-    form.resetToken = result?.data?.resetToken || ''
+    form.resetToken = result.resetToken || ''
 
     uni.hideLoading()
     currentStep.value = 2
   }
-  catch (error) {
+  catch (error: any) {
     uni.hideLoading()
     uni.showToast({
       title: error?.message || '验证失败，请重试',
@@ -306,15 +303,6 @@ const verifyPhone = async () => {
 
 // 重置密码
 const resetPassword = async () => {
-  // 表单验证
-  if (!form.newPassword) {
-    uni.showToast({
-      title: '请输入新密码',
-      icon: 'none',
-    })
-    return
-  }
-
   if (form.newPassword.length < 6) {
     uni.showToast({
       title: '密码长度不能少于6位',
@@ -323,17 +311,9 @@ const resetPassword = async () => {
     return
   }
 
-  if (!form.confirmPassword) {
-    uni.showToast({
-      title: '请确认新密码',
-      icon: 'none',
-    })
-    return
-  }
-
   if (form.newPassword !== form.confirmPassword) {
     uni.showToast({
-      title: '两次密码输入不一致',
+      title: '两次输入的密码不一致',
       icon: 'none',
     })
     return
@@ -341,15 +321,15 @@ const resetPassword = async () => {
 
   try {
     uni.showLoading({ title: '重置中...' })
-    // await resetPasswordApi({
-    //   resetToken: form.resetToken,
-    //   newPassword: form.newPassword,
-    // })
+    await resetPasswordApi({
+      resetToken: form.resetToken,
+      newPassword: form.newPassword,
+    })
 
     uni.hideLoading()
     currentStep.value = 3
   }
-  catch (error) {
+  catch (error: any) {
     uni.hideLoading()
     uni.showToast({
       title: error?.message || '重置失败，请重试',

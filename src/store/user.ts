@@ -11,7 +11,7 @@ const userInfoState: IUserInfoRes = {
   id: null,
   username: '',
   nickname: '',
-  avatar: '/static/images/default-avatar.png',
+  avatar: '/static/images/default-avatar.svg',
 }
 
 export const useUserStore = defineStore(
@@ -23,7 +23,7 @@ export const useUserStore = defineStore(
     const setUserInfo = (val: IUserInfoRes) => {
       console.log('设置用户信息', val)
       // 若头像为空 则使用默认头像
-      if (!val.avatar) {
+      if (val && !val.avatar) {
         val.avatar = userInfoState.avatar
       }
       userInfo.value = val
@@ -44,10 +44,16 @@ export const useUserStore = defineStore(
      */
     const fetchUserInfo = async () => {
       // 调用获取用户接口
-      const res = await getUserInfo()
-      console.log('获取用户信息-res: ', res)
-      setUserInfo(res.data)
-      return res
+      try {
+        const res = await getUserInfo()
+        console.log('获取用户信息-res: ', res)
+        setUserInfo(res)
+        return res
+      }
+      catch (error) {
+        console.error('获取用户信息失败:', error)
+        throw error
+      }
     }
 
     /**
