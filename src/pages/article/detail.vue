@@ -103,7 +103,7 @@
 import type { CommentStatistics } from '@/api/comment'
 import type { Article } from '@/api/home'
 import { onLoad, onShow } from '@dcloudio/uni-app'
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { getArticleDetail } from '@/api/article'
 import { checkFavorite, FavoriteType, toggleFavorite as toggleFavoriteApi } from '@/api/favorite'
 import CommentSystem from '@/components/CommentSystem.vue'
@@ -281,7 +281,7 @@ const loadArticleDetail = async () => {
     navTitle.value = '文章详情'
     // 加载相关文章
     await loadRelatedArticles()
-    commentRef.value?.refresh?.()
+    // commentRef.value?.refresh?.()
   }
   catch (error) {
     console.error('获取文章详情失败:', error)
@@ -337,7 +337,7 @@ const goBack = () => {
   uni.navigateBack()
 }
 
-// 跳转到文章详情
+// 跳转指定文章详情
 const goToArticle = (targetArticle: Article) => {
   uni.navigateTo({
     url: `/pages/article/detail?id=${targetArticle.id}`
@@ -443,7 +443,7 @@ const toggleFavorite = async () => {
 const updateCommentStats = (stats: CommentStatistics) => {
   commentStats.value = stats
 }
-// 页面参数获取
+// 页面参数获取文章Id
 const getPageParams = (options: any) => {
   if (options && options.id) {
     articleId.value = Number.parseInt(options.id)
@@ -454,8 +454,6 @@ const getPageParams = (options: any) => {
 onLoad((options) => {
   getPageParams(options)
   loadArticleDetail()
-})
-onMounted(() => {
 })
 
 onShow(async () => {

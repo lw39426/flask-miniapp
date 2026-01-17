@@ -9,6 +9,7 @@ import { ResultEnum } from './tools/enum'
 // 刷新 token 状态管理
 let refreshing = false // 防止重复刷新 token 标识
 let taskQueue: (() => void)[] = [] // 刷新 token 请求队列
+let isShowingLoginModal = false // 是否正在显示登录提示弹窗
 
 // 响应数据
 export function http<T>(options: CustomRequestOptions) {
@@ -60,23 +61,27 @@ export function http<T>(options: CustomRequestOptions) {
           const tokenStore = useTokenStore()
           if (!isDoubleTokenMode) {
             // 未启用双token策略，显示确认框询问用户是否前往登录
-            uni.showModal({
-              title: '登录提示',
-              content: '您还未登录或登录已过期，无法进行此操作。是否前往登录页面？',
-              confirmText: '去登录',
-              cancelText: '取消',
-              success: (modalRes) => {
-                if (modalRes.confirm) {
-                  // 用户选择去登录，清理用户信息并跳转
-                  tokenStore.logout()
-                  uni.navigateTo({ url: LOGIN_PAGE })
+            if (!isShowingLoginModal) {
+              isShowingLoginModal = true
+              uni.showModal({
+                title: '登录提示',
+                content: '您还未登录或登录已过期，无法进行此操作。是否前往登录页面？',
+                confirmText: '去登录',
+                cancelText: '取消',
+                success: (modalRes) => {
+                  isShowingLoginModal = false
+                  if (modalRes.confirm) {
+                    // 用户选择去登录，清理用户信息并跳转
+                    tokenStore.logout()
+                    uni.navigateTo({ url: LOGIN_PAGE })
+                  }
+                  else {
+                    // 用户选择取消，只清理用户信息，不跳转
+                    tokenStore.logout()
+                  }
                 }
-                else {
-                  // 用户选择取消，只清理用户信息，不跳转
-                  tokenStore.logout()
-                }
-              }
-            })
+              })
+            }
             return reject(resData)
           }
 
@@ -86,23 +91,27 @@ export function http<T>(options: CustomRequestOptions) {
           // 检查是否有有效的refreshToken
           if (!refreshToken) {
             // 没有refreshToken，显示确认框询问用户是否前往登录
-            uni.showModal({
-              title: '登录提示',
-              content: '您的登录已过期，无法进行此操作。是否前往登录页面？',
-              confirmText: '去登录',
-              cancelText: '取消',
-              success: (modalRes) => {
-                if (modalRes.confirm) {
-                  // 用户选择去登录，清理用户信息并跳转
-                  tokenStore.logout()
-                  uni.navigateTo({ url: LOGIN_PAGE })
+            if (!isShowingLoginModal) {
+              isShowingLoginModal = true
+              uni.showModal({
+                title: '登录提示',
+                content: '您的登录已过期，无法进行此操作。是否前往登录页面？',
+                confirmText: '去登录',
+                cancelText: '取消',
+                success: (modalRes) => {
+                  isShowingLoginModal = false
+                  if (modalRes.confirm) {
+                    // 用户选择去登录，清理用户信息并跳转
+                    tokenStore.logout()
+                    uni.navigateTo({ url: LOGIN_PAGE })
+                  }
+                  else {
+                    // 用户选择取消，只清理用户信息，不跳转
+                    tokenStore.logout()
+                  }
                 }
-                else {
-                  // 用户选择取消，只清理用户信息，不跳转
-                  tokenStore.logout()
-                }
-              }
-            })
+              })
+            }
             return reject(resData)
           }
 
@@ -136,27 +145,31 @@ export function http<T>(options: CustomRequestOptions) {
               console.error('刷新 token 失败:', refreshErr)
               refreshing = false
               // 刷新 token 失败，显示确认框询问用户是否前往登录
-              nextTick(() => {
-                // 关闭其他弹窗
-                uni.hideToast()
-                uni.showModal({
-                  title: '登录提示',
-                  content: '登录状态刷新失败，您的登录已过期。是否前往登录页面？',
-                  confirmText: '去登录',
-                  cancelText: '取消',
-                  success: async (modalRes) => {
-                    if (modalRes.confirm) {
-                      // 用户选择去登录，清理用户信息并跳转
-                      await tokenStore.logout()
-                      uni.navigateTo({ url: LOGIN_PAGE })
+              if (!isShowingLoginModal) {
+                isShowingLoginModal = true
+                nextTick(() => {
+                  // 关闭其他弹窗
+                  uni.hideToast()
+                  uni.showModal({
+                    title: '登录提示',
+                    content: '登录状态刷新失败，您的登录已过期。是否前往登录页面？',
+                    confirmText: '去登录',
+                    cancelText: '取消',
+                    success: async (modalRes) => {
+                      isShowingLoginModal = false
+                      if (modalRes.confirm) {
+                        // 用户选择去登录，清理用户信息并跳转
+                        await tokenStore.logout()
+                        uni.navigateTo({ url: LOGIN_PAGE })
+                      }
+                      else {
+                        // 用户选择取消，只清理用户信息，不跳转
+                        await tokenStore.logout()
+                      }
                     }
-                    else {
-                      // 用户选择取消，只清理用户信息，不跳转
-                      await tokenStore.logout()
-                    }
-                  }
+                  })
                 })
-              })
+              }
             }
             finally {
               // 不管刷新 token 成功与否，都清空任务队列

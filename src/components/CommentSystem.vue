@@ -670,11 +670,6 @@ onMounted(() => {
       keyboardHeight.value = res.height
     })
   }
-
-  // 2. 如果挂载时已经有 ID 了，就加载一次（如果 watch 没有触发）
-  if ((props.articleId || props.productId) && comments.value.length === 0) {
-    refresh()
-  }
 })
 
 // 页面卸载记得移除监听
