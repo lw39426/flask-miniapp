@@ -202,10 +202,20 @@ const onBack = () => {
   font-size: 14px;
   color: #333;
   height: 100%;
+  min-height: 100%;
+  line-height: normal;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  box-sizing: border-box;
+  display: block;
+  vertical-align: middle;
 }
 
 .input-placeholder {
   color: #999;
+  font-size: 14px;
+  line-height: normal;
 }
 
 .back-icon-wrapper {

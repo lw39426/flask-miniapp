@@ -1,8 +1,6 @@
 <template>
   <view class="h-full">
-    <CategorySkeleton v-if="loading && categories.length === 0" />
-    <!-- <CategorySkeleton v-if="true" /> -->
-    <view v-else class="category-page">
+    <view class="category-page">
       <!-- 搜索栏 -->
       <view style="background: #ffffff; width: 100%; box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);">
         <NavBarSearch :fixed="false" bg-color="#e5e5e5" @click="goToSearch" />
@@ -11,7 +9,8 @@
       <view class="category-content">
         <!-- 左侧分类导航 -->
         <view class="category-nav">
-          <scroll-view class="nav-scroll" :scroll-y="true">
+          <CategoryNavSkeleton v-if="navLoading && categories.length === 0" />
+          <scroll-view v-else class="nav-scroll" :scroll-y="true">
             <view
               v-for="(category, index) in categories"
               :key="index"
@@ -26,17 +25,41 @@
 
         <!-- 右侧子分类内容 -->
         <view class="category-detail">
-          <scroll-view class="detail-scroll" :scroll-y="true">
-            <!-- 加载状态 -->
-            <view v-if="loading" class="loading-container">
+          <CategoryDetailSkeleton v-if="detailLoading" />
+          <scroll-view v-else class="detail-scroll" :scroll-y="true">
+            <!-- 加载状态 (保留作为分页或局部加载提示) -->
+            <!-- <view v-if="detailLoading" class="loading-container">
               <text class="loading-text">加载中...</text>
-            </view>
+            </view> -->
             <!-- 分类横幅 -->
-            <view v-if="currentCategoryData.id && currentCategoryData.imageUrl" class="category-banner">
+            <view v-if="currentCategoryData.id" class="category-banner">
+              <!-- 骨架屏 -->
+              <view
+                v-if="currentCategoryData.imageUrl && !bannerLoaded && !bannerError"
+                class="banner-skeleton animate-pulse"
+              />
+
+              <!-- 加载失败占位或无图片占位 -->
+              <view
+                v-if="bannerError || !currentCategoryData.imageUrl"
+                class="banner-error"
+                @tap="currentCategoryData.imageUrl ? switchCategory(currentCategory) : null"
+              >
+                <text class="i-carbon-image-search text-64rpx text-gray-400" />
+                <text class="mt-10rpx text-24rpx text-gray-400">
+                  {{ bannerError ? '图片加载失败，点击重试' : '暂无分类图片' }}
+                </text>
+              </view>
+
+              <!-- 横幅图片 -->
               <image
+                v-if="currentCategoryData.imageUrl"
                 class="banner-image"
+                :class="{ 'opacity-0': !bannerLoaded }"
                 :src="currentCategoryData.imageUrl"
                 mode="aspectFill"
+                @load="onBannerLoad"
+                @error="onBannerError"
                 @tap="onBannerTap"
               />
             </view>
@@ -100,7 +123,8 @@ import type { Category, Product } from '@/api/category'
 import { computed, onMounted, ref } from 'vue'
 import { getCategoryList, getCategoryProducts } from '@/api/category'
 import NavBarSearch from '@/components/NavBarSearch.vue'
-import CategorySkeleton from './components/CategorySkeleton.vue'
+import CategoryDetailSkeleton from './components/CategoryDetailSkeleton.vue'
+import CategoryNavSkeleton from './components/CategoryNavSkeleton.vue'
 
 definePage({
   style: {
@@ -112,12 +136,15 @@ definePage({
 // 响应式数据
 const currentCategory = ref(0)
 const categories = ref<Category[]>([])
-const loading = ref(true)
+const navLoading = ref(true)
+const detailLoading = ref(true)
 const hotProducts = ref<Record<number, Product[]>>({})
 const waterfallColumns = ref<Product[][]>([[], []]) // 瀑布流数据
 const columnHeights = ref<number[]>([0, 0])
 const imageLoadCount = ref(0)
 const totalImages = ref(0)
+const bannerLoaded = ref(false)
+const bannerError = ref(false)
 
 // 计算属性
 const currentCategoryData = computed(() => {
@@ -125,35 +152,51 @@ const currentCategoryData = computed(() => {
   return category || { id: 0, name: '', imageUrl: '', children: [] }
 })
 
+// 横幅加载成功
+const onBannerLoad = () => {
+  bannerLoaded.value = true
+  bannerError.value = false
+}
+
+// 横幅加载失败
+const onBannerError = () => {
+  bannerLoaded.value = false
+  bannerError.value = true
+}
+
 // 获取分类列表
 const loadCategories = async () => {
   try {
-    loading.value = true
+    navLoading.value = true
     const res = await getCategoryList()
     console.log('分类列表:', res.data)
     categories.value = res.data
+    navLoading.value = false // 左侧加载完成
 
     // 加载第一个分类的热门商品
     if (res.data.length > 0) {
       // eslint-disable-next-line ts/no-use-before-define
       await loadHotProducts(res.data[0].id)
     }
+    else {
+      detailLoading.value = false // 没有数据也要关闭右侧加载
+    }
   }
   catch (error) {
     console.error('获取分类列表失败:', error)
+    navLoading.value = false
+    detailLoading.value = false
     uni.showToast({
       title: '获取分类失败',
-      icon: 'error'
+      icon: 'error',
     })
-  }
-  finally {
-    loading.value = false
   }
 }
 
 // 获取热门商品
 const loadHotProducts = async (categoryId: number) => {
   try {
+    detailLoading.value = true
     const res = await getCategoryProducts(categoryId, 1, 6)
     hotProducts.value[categoryId] = res.data.data
     // 布局瀑布流
@@ -162,6 +205,9 @@ const loadHotProducts = async (categoryId: number) => {
   }
   catch (error) {
     console.error('获取热门商品失败:', error)
+  }
+  finally {
+    detailLoading.value = false
   }
 }
 
@@ -240,6 +286,10 @@ const switchCategory = async (index: number) => {
   currentCategory.value = index
   const category = categories.value[index]
 
+  // 重置横幅加载状态
+  bannerLoaded.value = false
+  bannerError.value = false
+
   // 如果该分类还没有加载热门商品，则加载
   if (category && !hotProducts.value[category.id]) {
     await loadHotProducts(category.id)
@@ -292,7 +342,7 @@ onShow(() => {
 
 <style scoped>
 .category-page {
-  background-color: #f8f6f0;
+  background-color: #f0f8f8;
   height: 92vh;
   display: flex;
   flex-direction: column;
@@ -393,14 +443,48 @@ onShow(() => {
 
 /* 分类横幅 */
 .category-banner {
-  margin: 24rpx;
+  margin: 20rpx;
+  height: 200rpx;
   border-radius: 16rpx;
   overflow: hidden;
+  position: relative;
+  background-color: #f2f2f2;
+}
+
+.banner-skeleton {
+  width: 100%;
+  height: 100%;
+  background-color: #e6e6e6;
+}
+
+.banner-error {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #eaeaea;
 }
 
 .banner-image {
   width: 100%;
-  height: 240rpx;
+  height: 100%;
+  transition: opacity 0.3s ease;
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 /* 子分类区块 */

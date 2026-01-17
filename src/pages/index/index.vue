@@ -43,8 +43,8 @@
             立即领取
           </view>
         </view>
-        <view class="promo-right" @tap="goToMore">
-          <view class="promo-card primary">
+        <view class="promo-right">
+          <view class="promo-card primary" @tap="goToMore">
             <text class="promo-title">邀好友 得100元</text>
             <text class="promo-sub">新朋友首杯专享福利</text>
           </view>
