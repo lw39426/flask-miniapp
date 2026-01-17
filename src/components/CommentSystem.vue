@@ -97,6 +97,7 @@ import type { Comment, CommentListResponse, CommentStatistics } from '@/api/comm
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { commentAPI } from '@/api/comment'
 import { useNavbar } from '@/hooks/useNavbar'
+import { mockComments, mockPagination } from '@/mock/comment'
 import { useTokenStore } from '@/store/token'
 import CommentItem from './CommentItem.vue'
 
@@ -207,174 +208,10 @@ const loadComments = async (page = 1, append = false) => {
     // 应用筛选排序
     // sortComments()
   }
-  catch (error) {
+  catch (error: any) {
     console.error('加载评论失败:', error)
-    // comments.value = [
-    //   {
-    //     "article_id": 23,
-    //     "children": [
-    //       {
-    //         "article_id": 23,
-    //         "children": [],
-    //         "content": "222",
-    //         "created_at": "2025-10-23 10:58:19",
-    //         "id": 35,
-    //         "is_author": false,
-    //         "is_deleted": false,
-    //         "is_liked": false,
-    //         "level": 2,
-    //         "like_count": 0,
-    //         "parent_id": 32,
-    //         "reply_count": 0,
-    //         "reply_to_nickname": "\u54c8\u54c8",
-    //         "reply_to_user_id": 8,
-    //         "status": "approved",
-    //         "updated_at": "2025-10-23 10:58:19",
-    //         "user_avatar": "http://127.0.0.1:5050/static/temp/gZohYXBqXJbEc04947e63a4ad0db9601fe3b0c31a7cd.png",
-    //         "user_id": 8,
-    //         "user_nickname": "\u54c8\u54c8",
-    //         "user_role": "user"
-    //       },
-    //       {
-    //         "article_id": 23,
-    //         "children": [],
-    //         "content": "121",
-    //         "created_at": "2025-10-23 17:43:07",
-    //         "id": 36,
-    //         "is_author": false,
-    //         "is_deleted": false,
-    //         "is_liked": false,
-    //         "level": 2,
-    //         "like_count": 0,
-    //         "parent_id": 32,
-    //         "reply_count": 0,
-    //         "reply_to_nickname": "\u54c8\u54c8",
-    //         "reply_to_user_id": 8,
-    //         "status": "approved",
-    //         "updated_at": "2025-10-23 17:43:07",
-    //         "user_avatar": "http://127.0.0.1:5050/static/temp/gZohYXBqXJbEc04947e63a4ad0db9601fe3b0c31a7cd.png",
-    //         "user_id": 8,
-    //         "user_nickname": "\u54c8\u54c8",
-    //         "user_role": "user"
-    //       }
-    //     ],
-    //     "content": "11",
-    //     "created_at": "2025-10-23 09:46:18",
-    //     "id": 32,
-    //     "is_author": false,
-    //     "is_deleted": false,
-    //     "is_liked": true,
-    //     "level": 1,
-    //     "like_count": 1,
-    //     "parent_id": null,
-    //     "reply_count": 2,
-    //     "reply_to_nickname": null,
-    //     "reply_to_user_id": null,
-    //     "status": "approved",
-    //     "updated_at": "2025-10-23 09:50:28",
-    //     "user_avatar": "http://127.0.0.1:5050/static/temp/gZohYXBqXJbEc04947e63a4ad0db9601fe3b0c31a7cd.png",
-    //     "user_id": 8,
-    //     "user_nickname": "\u54c8\u54c8",
-    //     "user_role": "user"
-    //   },
-    //   {
-    //     "article_id": 23,
-    //     "children": [
-    //       {
-    //         "article_id": 23,
-    //         "children": [],
-    //         "content": "\u4f60\u597d\u5440\uff0c\u8bf7\u5927\u5bb6\u591a\u591a\u5173\u7167",
-    //         "created_at": "2025-10-10 22:39:47",
-    //         "id": 26,
-    //         "is_author": false,
-    //         "is_deleted": false,
-    //         "is_liked": false,
-    //         "level": 2,
-    //         "like_count": 0,
-    //         "parent_id": 24,
-    //         "reply_count": 0,
-    //         "reply_to_nickname": "\u5468\u5bb6\u8005111",
-    //         "reply_to_user_id": 6,
-    //         "status": "approved",
-    //         "updated_at": "2025-10-10 22:39:47",
-    //         "user_avatar": "http://127.0.0.1:5050/static/temp/gZohYXBqXJbEc04947e63a4ad0db9601fe3b0c31a7cd.png",
-    //         "user_id": 8,
-    //         "user_nickname": "\u54c8\u54c8",
-    //         "user_role": "user"
-    //       },
-    //       {
-    //         "article_id": 23,
-    //         "children": [],
-    //         "content": "\u54c8\u54c8\u54c8\u6b22\u8fce\u6b22\u8fce",
-    //         "created_at": "2025-10-10 23:20:53",
-    //         "id": 28,
-    //         "is_author": false,
-    //         "is_deleted": false,
-    //         "is_liked": false,
-    //         "level": 2,
-    //         "like_count": 0,
-    //         "parent_id": 24,
-    //         "reply_count": 0,
-    //         "reply_to_nickname": "\u54c8\u54c8",
-    //         "reply_to_user_id": 8,
-    //         "status": "approved",
-    //         "updated_at": "2025-10-10 23:20:53",
-    //         "user_avatar": "http://127.0.0.1:5050/static/temp/20201103140533_a8258.png",
-    //         "user_id": 6,
-    //         "user_nickname": "\u5468\u5bb6\u8005111",
-    //         "user_role": "user"
-    //       }
-    //     ],
-    //     "content": "\u4f60\u597d\u5440",
-    //     "created_at": "2025-10-10 22:17:28",
-    //     "id": 24,
-    //     "is_author": false,
-    //     "is_deleted": false,
-    //     "is_liked": true,
-    //     "level": 1,
-    //     "like_count": 1,
-    //     "parent_id": null,
-    //     "reply_count": 2,
-    //     "reply_to_nickname": null,
-    //     "reply_to_user_id": null,
-    //     "status": "approved",
-    //     "updated_at": "2025-10-10 23:15:47",
-    //     "user_avatar": "http://127.0.0.1:5050/static/temp/20201103140533_a8258.png",
-    //     "user_id": 6,
-    //     "user_nickname": "\u5468\u5bb6\u8005111",
-    //     "user_role": "user"
-    //   },
-    //   {
-    //     "article_id": 23,
-    //     "children": [],
-    //     "content": "11",
-    //     "created_at": "2025-10-10 21:55:45",
-    //     "id": 22,
-    //     "is_author": false,
-    //     "is_deleted": false,
-    //     "is_liked": true,
-    //     "level": 1,
-    //     "like_count": 1,
-    //     "parent_id": null,
-    //     "reply_count": 0,
-    //     "reply_to_nickname": null,
-    //     "reply_to_user_id": null,
-    //     "status": "approved",
-    //     "updated_at": "2025-10-10 22:41:36",
-    //     "user_avatar": "http://127.0.0.1:5050/static/temp/20201103140533_a8258.png",
-    //     "user_id": 6,
-    //     "user_nickname": "\u5468\u5bb6\u8005111",
-    //     "user_role": "user"
-    //   }
-    // ]
-    // pagination.value = {
-    //   "has_next": false,
-    //   "has_prev": false,
-    //   "page": 1,
-    //   "pages": 1,
-    //   "per_page": 20,
-    //   "total": 3
-    // }
+    comments.value = mockComments as any
+    pagination.value = mockPagination
     uni.showToast({
       title: error.msg || error.message || '加载评论失败',
       icon: 'error'
