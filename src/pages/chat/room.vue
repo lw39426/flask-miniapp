@@ -139,7 +139,8 @@
 
     <!-- 底部输入栏 - 固定初始高度，自适应变化 -->
     <view
-      class="flex-shrink-0 border-t-1 border-[#e5e5e5] bg-[#f7f7f7] pb-[env(safe-area-inset-bottom)]"
+      class="flex-shrink-0 border-t-1 border-[#e5e5e5] bg-[#f7f7f7]"
+      :style="{ paddingBottom: keyboardHeight > 0 ? '12rpx' : 'env(safe-area-inset-bottom)' }"
     >
       <view class="min-h-[78rpx] flex items-end gap-[12rpx] p-[4rpx_24rpx]">
         <!-- 语音/文字切换 -->
@@ -249,7 +250,7 @@
 import type { ChatMessage } from '@/api/types/chat'
 
 import { onHide, onLoad, onShow } from '@dcloudio/uni-app'
-import { computed, nextTick, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 
 import { getMessages, markRoomAsRead, sendMessage as sendMessageApi } from '@/api/chat'
 import { useNavbar } from '@/hooks/useNavbar'
@@ -280,7 +281,7 @@ interface Message extends ChatMessage {
 }
 
 // 状态管理
-const { safeAreaTop } = useNavbar()
+const { safeAreaTop, safeAreaBottom } = useNavbar()
 const messages = ref<Message[]>([])
 const inputText = ref('')
 const isVoiceMode = ref(false)
@@ -292,8 +293,27 @@ const loading = ref(false)
 const isOtherTyping = ref(false) // 对方是否正在输入
 let otherTypingTimer: number | null = null // 对方输入状态自动隐藏定时器
 let inputTypingTimer: number | null = null // 输入防抖定时器（发送typing事件）
-let typingStopTimer: number | null = null // 停止输入定时器
+const typingStopTimer = ref<number | null>(null) // 停止输入定时器
 const keyboardHeight = ref(0) // 键盘高度（用于动态 padding-bottom）
+
+// 消息超时处理 (localId -> timeoutId)
+const messageTimeouts = new Map<number, any>()
+
+/**
+ * 定义事件类型，避免 any
+ */
+interface InputFocusEvent {
+  detail: {
+    height?: number
+  }
+}
+
+interface LineChangeEvent {
+  detail: {
+    lineCount?: number
+    height?: number
+  }
+}
 
 // 分页状态
 const pagination = ref({
@@ -358,6 +378,20 @@ const scrollToBottom = () => {
     scrollToView.value = ``
   })
 }
+
+onMounted(() => {
+  // 【核心】监听键盘高度变化，参考 CommentSystem.vue
+  uni.onKeyboardHeightChange((res) => {
+    console.log('[Room] Keyboard height changed:', res.height)
+    keyboardHeight.value = res.height
+    if (res.height > 0) {
+      // 键盘弹起，确保看到最新消息
+      nextTick(() => {
+        scrollToBottom()
+      })
+    }
+  })
+})
 
 /**
  * 处理消息时间分割线
@@ -491,17 +525,18 @@ const sendTextMessage = async (content: string) => {
       console.warn('[Room] 消息发送超时')
       uni.showToast({ title: '发送超时，请重试', icon: 'none' })
     }
+    messageTimeouts.delete(tempId)
   }, 30000)
+  messageTimeouts.set(tempId, timeoutId)
 
   try {
     // 【修改】优先使用 WebSocket 发送
-    const wsSuccess = await socketManager.sendMessage(roomId.value, content.trim(), 'text')
+    const wsSuccess = await socketManager.sendMessage(roomId.value, content.trim(), 'text', tempId)
 
     if (wsSuccess) {
       console.log('[Room] 📤 Message sent via WebSocket, waiting for server response...')
       // WebSocket 发送成功,等待服务器通过 new_message 事件返回完整消息
       // handleRoomMessage 会处理服务器返回的消息并更新 UI
-      // 这里不清除 timeout,让服务器响应来更新状态
     }
     else {
       // WebSocket 未连接,降级使用 HTTP API
@@ -512,7 +547,11 @@ const sendTextMessage = async (content: string) => {
         type: 'text'
       })
 
-      clearTimeout(timeoutId)
+      // HTTP 发送成功，清除超时
+      if (messageTimeouts.has(tempId)) {
+        clearTimeout(messageTimeouts.get(tempId))
+        messageTimeouts.delete(tempId)
+      }
 
       if (response.code === 200 && response.data) {
         // 替换临时消息为服务器返回的消息
@@ -588,11 +627,13 @@ const resendMessage = async (message: Message) => {
       console.warn('[Room] 消息重试超时')
       uni.showToast({ title: '发送超时，请重试', icon: 'none' })
     }
+    messageTimeouts.delete(message.localId!)
   }, 30000)
+  messageTimeouts.set(message.localId, timeoutId)
 
   try {
     // 【修改】优先使用 WebSocket 发送
-    const wsSuccess = await socketManager.sendMessage(roomId.value, message.content, message.message_type)
+    const wsSuccess = await socketManager.sendMessage(roomId.value, message.content, message.message_type, message.localId)
 
     if (wsSuccess) {
       console.log('[Room] 📤 Retry message sent via WebSocket, waiting for server response...')
@@ -607,7 +648,11 @@ const resendMessage = async (message: Message) => {
         type: message.message_type
       })
 
-      clearTimeout(timeoutId)
+      // HTTP 发送成功，清除超时
+      if (messageTimeouts.has(message.localId)) {
+        clearTimeout(messageTimeouts.get(message.localId))
+        messageTimeouts.delete(message.localId)
+      }
 
       if (response.code === 200 && response.data) {
         const currentIndex = messages.value.findIndex(m => m.localId === message.localId)
@@ -824,9 +869,9 @@ const stopTyping = () => {
     inputTypingTimer = null
   }
 
-  if (typingStopTimer) {
-    clearTimeout(typingStopTimer)
-    typingStopTimer = null
+  if (typingStopTimer.value) {
+    clearTimeout(typingStopTimer.value)
+    typingStopTimer.value = null
   }
 
   socketManager.sendTyping(roomId.value, false)
@@ -840,11 +885,11 @@ const startTyping = () => {
   socketManager.sendTyping(roomId.value, true)
 
   // 3 秒后自动停止输入状态
-  if (typingStopTimer) {
-    clearTimeout(typingStopTimer)
+  if (typingStopTimer.value) {
+    clearTimeout(typingStopTimer.value)
   }
 
-  typingStopTimer = setTimeout(() => {
+  typingStopTimer.value = setTimeout(() => {
     stopTyping()
   }, 3000) as unknown as number
 }
@@ -870,47 +915,28 @@ const onInputChange = () => {
 }
 
 // 输入框聚焦
-const onInputFocus = (e: any) => {
+const onInputFocus = (e: InputFocusEvent) => {
   console.log('[Room] Input focus event:', e)
 
   // 聚焦时关闭所有面板
   showEmojiPanel.value = false
   showMorePanel.value = false
-
-  // 监听键盘高度变化
-  uni.onKeyboardHeightChange((res) => {
-    console.log('[Room] Keyboard height changed:', res.height)
-    if (res.height > 0) {
-      // 键盘弹起，设置主容器的 padding-bottom
-      keyboardHeight.value = res.height
-
-      // 滚动到底部，确保看到最新消息
-      nextTick(() => {
-        scrollToBottom()
-      })
-    }
-    else {
-      // 键盘收起，重置 padding-bottom
-      keyboardHeight.value = 0
-    }
-  })
 }
 
 // 输入框失焦
 const onInputBlur = () => {
   console.log('[Room] Input blur')
-  // 延迟处理，避免点击按钮时输入框立即失焦
   // 失焦时停止输入状态
   stopTyping()
 
-  // 重置键盘高度
+  // 重置键盘高度（延迟处理，防止点击表情面板时闪烁）
   setTimeout(() => {
     keyboardHeight.value = 0
   }, 100)
 }
 
 // 监听文本框行数变化
-const onLineChange = (e: any) => {
+const onLineChange = (e: LineChangeEvent) => {
   console.log('[Room] Line change:', e.detail)
   // 当输入内容增多导致行数变化时，确保滚动到底部
   nextTick(() => {
@@ -1050,7 +1076,7 @@ const handleRoomMessage = (data: any) => {
   console.log('[Room] Received new message:', data)
 
   // ✅ 注意：WebSocket 返回的字段是 message_id，需要映射为 id
-  const { room_id, message_id, content, message_type, created_at, sender, is_own } = data
+  const { room_id, message_id, content, message_type, created_at, sender, is_own, temp_id } = data
 
   // 只处理当前房间的消息
   if (room_id !== roomId.value) {
@@ -1058,15 +1084,31 @@ const handleRoomMessage = (data: any) => {
     return
   }
 
-  // 【修改】如果是自己发送的消息,查找并替换临时消息
+  // 【优化】如果是自己发送的消息,查找并替换临时消息
   if (is_own) {
-    // 查找最近的 sending 状态的临时消息
-    const tempIndex = messages.value.findIndex(
-      m => m.status === 'sending' && m.content === content && m.message_type === message_type
-    )
+    // 优先通过 temp_id (localId) 匹配
+    let tempIndex = -1
+    if (temp_id) {
+      tempIndex = messages.value.findIndex(m => m.localId === temp_id)
+    }
+
+    // 如果没匹配到，尝试通过内容和状态匹配 (兜底逻辑)
+    if (tempIndex === -1) {
+      tempIndex = messages.value.findIndex(
+        m => m.status === 'sending' && m.content === content && m.message_type === message_type
+      )
+    }
 
     if (tempIndex !== -1) {
-      console.log('[Room] ✅ Replacing temp message with server message')
+      console.log('[Room] ✅ Replacing temp message with server message, temp_id:', temp_id)
+
+      // 清除该消息的发送超时定时器
+      const localId = messages.value[tempIndex].localId
+      if (localId && messageTimeouts.has(localId)) {
+        clearTimeout(messageTimeouts.get(localId))
+        messageTimeouts.delete(localId)
+      }
+
       // 替换临时消息为服务器返回的真实消息
       messages.value[tempIndex] = {
         id: message_id,
@@ -1340,20 +1382,25 @@ onHide(() => {
   if (!roomId.value)
     return
 
-  // 【新增】离开会话房间
+  // 离开会话房间
   socketManager.leaveConversationRoom(roomId.value)
 
-  // 【新增】移除页面级监听器
+  // 移除页面级监听器
   unregisterPageListeners()
 
   // 停止输入状态
   stopTyping()
 })
 
-// 页面卸载时
+// 页面卸载
 onUnmounted(() => {
   console.log('[Room] 👋 Page unmounted')
-  // 清理工作已在 onHide 中完成
+  // 核心清理逻辑已在 onHide 中处理，这里只处理组件特有的清理
+
+  // 【新增】移除键盘监听
+  // #ifdef MP-WEIXIN
+  uni.offKeyboardHeightChange()
+  // #endif
 })
 </script>
 

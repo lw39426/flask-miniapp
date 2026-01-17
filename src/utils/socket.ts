@@ -561,9 +561,10 @@ class SocketIOManager {
    * @param roomId 房间ID
    * @param content 消息内容
    * @param messageType 消息类型 (text, image, voice 等)
+   * @param tempId 可选的临时ID，用于追踪消息
    * @returns Promise<boolean> 是否成功发送
    */
-  sendMessage(roomId: number, content: string, messageType: string = 'text'): Promise<boolean> {
+  sendMessage(roomId: number, content: string, messageType: string = 'text', tempId?: number): Promise<boolean> {
     return new Promise((resolve) => {
       if (this.status !== SocketStatus.CONNECTED) {
         console.warn('[SocketManager] Not connected, cannot send message via WebSocket')
@@ -571,18 +572,18 @@ class SocketIOManager {
         return
       }
 
-      // 生成唯一 ID 用于追踪消息
-      const tempId = Date.now()
+      // 使用传入的 tempId 或生成新的唯一 ID
+      const finalTempId = tempId || Date.now()
 
       // 发送消息
       this.send('send_message', {
         room_id: roomId,
         content,
         type: messageType,
-        temp_id: tempId
+        temp_id: finalTempId
       })
 
-      console.log(`[SocketManager] 📤 Message sent via WebSocket: ${content.substring(0, 50)}...`)
+      console.log(`[SocketManager] 📤 Message sent via WebSocket (temp_id: ${finalTempId}): ${content.substring(0, 50)}...`)
       resolve(true)
     })
   }
