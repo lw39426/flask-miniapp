@@ -22,7 +22,7 @@
             class="user-name"
             @tap="handleUserInfoClick()"
           >
-            {{ hasLogin ? (userInfo?.nickname1 || userInfo?.username1 || '默认用户111111111111111111111111111111111111111111111111111111') : '点击登录' }}
+            {{ hasLogin ? (userInfo?.nickname1 || userInfo?.username1 || '默认用户xx') : '点击登录' }}
           </text>
           <text class="user-desc">{{ hasLogin ? (userLevel || '普通会员') : '登录后享受更多服务' }}</text>
         </view>
@@ -143,12 +143,22 @@ const coverUrl = ref<string>('')
 
 // 顶部封面图显示：优先本地更新的 coverUrl，其次用户信息中的 bg_cover，最后默认图
 const coverSrc = computed(() => {
+  if (!hasLogin.value) {
+    return DEFAULT_COVER
+  }
   return userInfo.value?.bg_cover || coverUrl.value || DEFAULT_COVER
 })
 
 // 图片加载失败时回退默认图
 const onCoverError = () => {
   coverUrl.value = DEFAULT_COVER
+}
+
+/**
+ * 重置封面显示状态
+ */
+const resetCoverState = () => {
+  coverUrl.value = ''
 }
 
 // 更换封面：选择图片并上传到后端
@@ -185,7 +195,7 @@ const changeBgCover = () => {
 
         uni.showLoading({ title: '上传中...' })
         const baseURL = import.meta.env.VITE_SERVER_BASEURL
-        const uploadUrl = `${baseURL}/miniapp/user/bgCover`
+        const uploadUrl = `${baseURL}/api/v1/user/bgCover`
         console.log('准备上传图片到:', uploadUrl)
 
         uni.uploadFile({
@@ -426,6 +436,7 @@ const logout = () => {
     success: (res) => {
       if (res.confirm) {
         tokenStore.logout().then(() => {
+          resetCoverState()
           uni.showToast({
             title: '已退出登录',
             icon: 'success'
@@ -573,6 +584,7 @@ watch(hasLogin, (val) => {
     addLogoutMenuItem()
   }
   else {
+    resetCoverState()
     removeLogoutMenuItem()
   }
 })
