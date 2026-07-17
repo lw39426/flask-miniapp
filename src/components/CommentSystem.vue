@@ -71,15 +71,15 @@
         <!-- 图标栏 -->
         <view v-if="!commentContent.trim()" class="icon-bar">
           <view class="icon-item">
-            <text class="icon-num">💬</text>
-            <text class="icon-text">{{ statistics?.total_comments || 0 }}</text>
+            <view class="i-carbon-chat text-[30rpx] text-[#666]" />
           </view>
           <view class="icon-item" @tap="emit('toggle-like')">
-            <text class="icon-num">{{ isLiked ? '❤️' : '🤍' }}</text>
+            <view v-if="isLiked" class="i-carbon-favorite text-[30rpx] text-[#ff4141]" />
+            <view v-else class="i-carbon-favorite text-[30rpx] text-[#666]" />
             <text class="icon-text">{{ likes || 0 }}</text>
           </view>
           <view class="icon-item" @tap="emit('share')">
-            <text class="icon-num">📤</text>
+            <view class="i-carbon-share text-[28rpx] text-[#666]" />
           </view>
         </view>
 

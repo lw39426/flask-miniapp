@@ -3,7 +3,7 @@
     <!-- 自定义导航栏 -->
     <view class="nav-bar" :style="{ paddingTop: `${safeAreaTop}px` }">
       <view class="nav-back" @tap="goBack">
-        <text class="back-icon">←</text>
+        <view class="i-carbon-arrow-left text-[40rpx] text-[#2c2c2c]" />
       </view>
       <text class="nav-title">{{ navTitle }}</text>
       <view class="nav-actions">
@@ -15,18 +15,25 @@
       <!-- 文章头部信息 -->
       <view id="article-header" class="article-header">
         <!-- 文章标题 -->
-        <view class="mb-[14rpx] flex flex-row items-center justify-between">
+        <view class="mb-[20rpx] flex flex-row items-start justify-between gap-[20rpx]">
           <text id="article-title" class="article-title">{{ article.title }}</text>
-          <text class="ml-[14rpx] text-[50rpx]" @tap="toggleFavorite">{{ isFavorited ? '⭐' : '☆' }}</text>
+          <view class="favorite-btn" @tap="toggleFavorite">
+            <view :class="isFavorited ? 'i-carbon-star-filled text-[#f59e0b]' : 'i-carbon-star text-[#999]'" class="text-[44rpx]" />
+          </view>
         </view>
 
         <!-- 文章元信息 -->
         <view class="article-meta">
           <view class="meta-left">
+            <view class="author-avatar">
+              <view class="i-carbon-user-avatar text-[32rpx] text-[#666]" />
+            </view>
             <text class="article-author">{{ (article.author as any)?.nickname || '匿名' }}</text>
+            <text class="meta-dot">·</text>
             <text class="article-date">{{ formatDate(article.published_date) }}</text>
           </view>
           <view class="meta-right">
+            <view class="i-carbon-view text-[28rpx] text-[#999]" />
             <text class="article-stats">{{ article.views || Math.floor(Math.random() * 5000) + 1000 }}人已阅读</text>
           </view>
         </view>
@@ -42,21 +49,27 @@
 
       <!-- 文章标签 -->
       <view v-if="article.tags && article.tags.length > 0" class="article-tags">
-        <text class="tags-title">标签：</text>
+        <view class="tags-header">
+          <view class="i-carbon-tag text-[28rpx] text-[#666]" />
+          <text class="tags-title">标签</text>
+        </view>
         <view class="tags-list">
           <text
             v-for="(tag, index) in article.tags"
             :key="index"
             class="tag-item"
           >
-            {{ tag.name }}
+            #{{ tag.name }}
           </text>
         </view>
       </view>
 
       <!-- 相关文章推荐 -->
       <view v-if="relatedArticles.length > 0" class="related-articles">
-        <text class="section-title">相关推荐</text>
+        <view class="related-header">
+          <view class="i-carbon-list-boxes text-[32rpx] text-[#455293]" />
+          <text class="section-title">相关推荐</text>
+        </view>
         <view class="related-list">
           <view
             v-for="(relatedArticle, index) in relatedArticles"
@@ -73,6 +86,7 @@
               <text class="related-title">{{ relatedArticle.title }}</text>
               <text class="related-date">{{ formatDate(relatedArticle.published_date) }}</text>
             </view>
+            <view class="i-carbon-chevron-right text-[32rpx] text-[#ccc]" />
           </view>
         </view>
       </view>
@@ -445,10 +459,10 @@ onShow(async () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  /* padding: var(--status-bar-height) 32rpx 10rpx; */
   padding: 0 32rpx 10rpx;
-  background: #ffffff;
-  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.03);
   position: fixed;
   top: 0;
   left: 0;
@@ -462,18 +476,19 @@ onShow(async () => {
   display: flex;
   align-items: center;
   justify-content: flex-start;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
 }
 
-.back-icon {
-  font-size: 36rpx;
-  color: #2c2c2c;
+.nav-back:active {
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
 .nav-title {
   font-size: 32rpx;
   font-weight: 600;
   color: #2c2c2c;
-  max-width: 400rpx;
+  max-width: 360rpx;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -486,9 +501,18 @@ onShow(async () => {
   justify-content: flex-end;
 }
 
-.nav-action {
-  font-size: 28rpx;
-  color: #007bff;
+.nav-share {
+  width: 60rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+}
+
+.nav-share:active {
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
 /* 详情滚动区域 */
@@ -500,29 +524,65 @@ onShow(async () => {
 
 /* 文章头部 */
 .article-header {
-  padding: 30rpx 32rpx 30rpx;
+  padding: 32rpx;
   background: #ffffff;
 }
 
 .article-title {
-  font-size: 40rpx;
+  font-size: 44rpx;
   font-weight: 700;
-  color: #2c2c2c;
+  color: #1a1a1a;
   line-height: 1.4;
   display: block;
+  letter-spacing: -0.5rpx;
+}
+
+.favorite-btn {
+  flex-shrink: 0;
+  width: 60rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.favorite-btn:active {
+  background-color: rgba(0, 0, 0, 0.05);
+  transform: scale(0.95);
 }
 
 .article-meta {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding-top: 20rpx;
+  border-top: 1rpx solid #f5f5f5;
+  margin-top: 20rpx;
 }
 
 .meta-left {
   display: flex;
-  /* flex-direction: column; */
   align-items: center;
-  gap: 10rpx;
+  gap: 8rpx;
+}
+
+.author-avatar {
+  width: 36rpx;
+  height: 36rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f0f0f0;
+  border-radius: 50%;
+  margin-right: 4rpx;
+}
+
+.meta-dot {
+  font-size: 24rpx;
+  color: #ccc;
+  margin: 0 4rpx;
 }
 
 .article-date {
@@ -532,101 +592,129 @@ onShow(async () => {
 
 .article-author {
   font-size: 26rpx;
-  color: #666666;
+  color: #455293;
   font-weight: 500;
 }
 
 .meta-right {
   display: flex;
   align-items: center;
+  gap: 6rpx;
 }
 
 .article-stats {
-  font-size: 24rpx;
+  font-size: 22rpx;
   color: #999999;
 }
 
 /* 文章内容 */
 .article-content {
-  padding: 0 32rpx 32rpx;
-  border-top: 2rpx solid #f0f0f0;
+  padding: 0 32rpx 40rpx;
   background: #ffffff;
 }
 
 .content-text {
   line-height: 1.8;
-  font-size: 28rpx;
+  font-size: 30rpx;
   color: #333333;
   word-break: break-word;
+  letter-spacing: 0.3rpx;
 }
 
 /* 文章标签 */
 .article-tags {
-  padding: 32rpx;
+  padding: 24rpx 32rpx 32rpx;
   background: #ffffff;
-  border-top: 1rpx solid #f0f0f0;
+  border-top: 1rpx solid #f5f5f5;
+}
+
+.tags-header {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-bottom: 16rpx;
 }
 
 .tags-title {
   font-size: 26rpx;
   color: #666666;
-  margin-bottom: 16rpx;
-  display: block;
+  font-weight: 500;
 }
 
 .tags-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 16rpx;
+  gap: 12rpx;
 }
 
 .tag-item {
-  padding: 8rpx 16rpx;
-  background: #f8f9fa;
-  color: #007bff;
+  padding: 10rpx 20rpx;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  color: #455293;
   font-size: 24rpx;
-  border-radius: 20rpx;
-  border: 1rpx solid #e9ecef;
+  border-radius: 24rpx;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.tag-item:active {
+  transform: scale(0.95);
+  background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
 }
 
 /* 评论区域 */
 .comment-section {
   background: #f8f9fa;
+  border-top: 1rpx solid #e5e7eb;
 }
 
 /* 相关文章 */
 .related-articles {
   padding: 32rpx;
   background: #f8f9fa;
+  border-top: 1rpx solid #e5e7eb;
+}
+
+.related-header {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  margin-bottom: 24rpx;
 }
 
 .section-title {
   font-size: 32rpx;
   font-weight: 600;
   color: #2c2c2c;
-  margin-bottom: 24rpx;
-  display: block;
 }
 
 .related-list {
   display: flex;
   flex-direction: column;
-  gap: 20rpx;
+  gap: 16rpx;
 }
 
 .related-item {
   display: flex;
+  align-items: center;
   background: #ffffff;
-  border-radius: 12rpx;
+  border-radius: 16rpx;
   padding: 20rpx;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+}
+
+.related-item:active {
+  transform: scale(0.98);
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
 }
 
 .related-cover {
-  width: 120rpx;
-  height: 80rpx;
-  border-radius: 8rpx;
+  width: 160rpx;
+  height: 100rpx;
+  border-radius: 12rpx;
   margin-right: 20rpx;
+  flex-shrink: 0;
 }
 
 .related-content {
@@ -634,10 +722,11 @@ onShow(async () => {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  min-width: 0;
 }
 
 .related-title {
-  font-size: 26rpx;
+  font-size: 28rpx;
   color: #2c2c2c;
   font-weight: 500;
   line-height: 1.4;
@@ -730,35 +819,83 @@ onShow(async () => {
   max-width: 100% !important;
   height: auto !important;
   display: block;
-  margin: 20rpx auto;
-  border-radius: 12rpx;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+  margin: 24rpx auto;
+  border-radius: 16rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
 }
 
 :deep(.content-text p) {
-  margin: 16rpx 0 !important;
+  margin: 20rpx 0 !important;
   line-height: 1.8 !important;
+  color: #333 !important;
 }
 
 :deep(.content-text h1),
 :deep(.content-text h2),
 :deep(.content-text h3) {
-  margin: 32rpx 0 16rpx 0 !important;
-  font-weight: bold !important;
+  margin: 40rpx 0 20rpx 0 !important;
+  font-weight: 700 !important;
+  color: #1a1a1a !important;
+  line-height: 1.4 !important;
+}
+
+:deep(.content-text h1) {
+  font-size: 40rpx !important;
+}
+
+:deep(.content-text h2) {
+  font-size: 36rpx !important;
+}
+
+:deep(.content-text h3) {
+  font-size: 32rpx !important;
 }
 
 :deep(.content-text blockquote) {
-  margin: 20rpx 0 !important;
-  padding: 20rpx !important;
-  background: #f8f9fa !important;
-  border-left: 8rpx solid #007bff !important;
+  margin: 24rpx 0 !important;
+  padding: 24rpx 28rpx !important;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+  border-left: 6rpx solid #455293 !important;
   border-radius: 0 12rpx 12rpx 0 !important;
+  color: #555 !important;
+  font-style: italic !important;
 }
 
 :deep(.content-text pre) {
   overflow-x: auto !important;
   white-space: pre-wrap !important;
   word-break: break-all !important;
+  margin: 24rpx 0 !important;
+  padding: 24rpx !important;
+  background: #1a1a1a !important;
+  border-radius: 12rpx !important;
+  color: #e8e0ff !important;
+  font-size: 26rpx !important;
+  line-height: 1.6 !important;
+}
+
+:deep(.content-text code) {
+  background: #f0f0f0 !important;
+  padding: 4rpx 10rpx !important;
+  border-radius: 6rpx !important;
+  font-size: 26rpx !important;
+  color: #e74c3c !important;
+}
+
+:deep(.content-text a) {
+  color: #455293 !important;
+  text-decoration: underline !important;
+  text-underline-offset: 4rpx !important;
+}
+
+:deep(.content-text ul),
+:deep(.content-text ol) {
   margin: 20rpx 0 !important;
+  padding-left: 40rpx !important;
+}
+
+:deep(.content-text li) {
+  margin: 12rpx 0 !important;
+  line-height: 1.7 !important;
 }
 </style>
