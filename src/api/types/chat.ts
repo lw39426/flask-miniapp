@@ -42,6 +42,11 @@ export interface Sender {
 }
 
 /**
+ * 消息发送状态
+ */
+export type MessageSendStatus = 'sending' | 'sent' | 'failed' | 'retry'
+
+/**
  * 消息对象
  */
 export interface ChatMessage {
@@ -52,6 +57,8 @@ export interface ChatMessage {
   created_at: string
   sender: Sender
   is_own?: boolean // 是否为当前用户发送
+  status?: MessageSendStatus // 消息发送状态（前端使用）
+  sequence?: number // 消息序列号（用于排序和离线消息）
 }
 
 /**

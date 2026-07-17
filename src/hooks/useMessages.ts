@@ -1,6 +1,13 @@
 /**
  * 聊天消息管理 Composable
  * 封装消息相关的状态和操作
+ *
+ * 功能特性：
+ * - ✅ 乐观更新 - 消息立即显示
+ * - ✅ ACK 确认 - 等待服务器确认
+ * - ✅ 失败重试 - 支持手动重试
+ * - ✅ 消息去重 - 防止重复消息
+ * - ✅ 序列号更新 - 支持离线消息拉取
  */
 
 import type { ChatMessage } from '@/api/types'
@@ -34,6 +41,12 @@ export function useMessages(options: UseMessagesOptions) {
   // 对方输入状态
   const otherUserTyping = ref(false)
   let typingTimer: number | null = null
+
+  // 【新增】失败消息列表（用于重试）
+  const failedMessages = ref<Map<number, { content: string, messageType: string }>>(new Map())
+
+  // 【新增】本地消息ID集合（用于去重）
+  const localMessageIds = new Set<number>()
 
   /**
    * 加载消息历史
@@ -95,7 +108,55 @@ export function useMessages(options: UseMessagesOptions) {
   }
 
   /**
+   * 通过 HTTP 发送消息（备用方案）
+   */
+  const sendViaHttp = async (tempMessage: ChatMessage, tempId: number, content: string) => {
+    try {
+      const response = await sendMessageAPI(roomId, {
+        content: content.trim(),
+        type: MESSAGE_TYPES.TEXT
+      })
+
+      if (response.code === 200 && response.data) {
+        // 替换临时消息
+        const index = messages.value.findIndex(m => m.id === tempId)
+        if (index > -1) {
+          messages.value[index] = {
+            ...response.data,
+            status: 'sent'
+          }
+          localMessageIds.delete(tempId)
+          localMessageIds.add(response.data.id)
+        }
+        console.log('[Chat] ✅ Message sent via HTTP')
+      }
+      else {
+        throw new Error('HTTP send failed')
+      }
+    }
+    catch (httpError) {
+      // 发送失败，标记消息状态
+      const index = messages.value.findIndex(m => m.id === tempId)
+      if (index > -1) {
+        messages.value[index] = {
+          ...messages.value[index],
+          status: 'failed'
+        }
+      }
+
+      // 保存失败消息用于重试
+      failedMessages.value.set(tempId, {
+        content: content.trim(),
+        messageType: MESSAGE_TYPES.TEXT
+      })
+
+      throw httpError
+    }
+  }
+
+  /**
    * 发送文本消息
+   * 使用乐观更新 + ACK 确认机制
    */
   const sendTextMessage = async (content: string) => {
     if (!content.trim() || sending.value)
@@ -104,9 +165,11 @@ export function useMessages(options: UseMessagesOptions) {
     try {
       sending.value = true
 
-      // 创建临时消息（乐观更新）
+      const tempId = Date.now()
+
+      // 创建临时消息（乐观更新）- 立即显示
       const tempMessage: ChatMessage = {
-        id: Date.now(), // 临时 ID
+        id: tempId, // 临时 ID
         room_id: roomId,
         content: content.trim(),
         message_type: MESSAGE_TYPES.TEXT,
@@ -117,35 +180,53 @@ export function useMessages(options: UseMessagesOptions) {
           nickname: '我',
           avatar: ''
         },
-        is_own: true
+        is_own: true,
+        // 消息状态
+        status: 'sending'
       }
 
-      // 添加到消息列表
+      // 添加到消息列表（乐观更新）
       messages.value.push(tempMessage)
+      localMessageIds.add(tempId)
 
-      // 发送到服务器
-      const response = await sendMessageAPI(roomId, {
-        content: content.trim(),
-        type: MESSAGE_TYPES.TEXT
-      })
+      // 优先使用 WebSocket 发送（带 ACK 确认）
+      if (socketManager.isConnected()) {
+        try {
+          const result = await socketManager.sendMessageWithAck(
+            roomId,
+            content.trim(),
+            MESSAGE_TYPES.TEXT,
+            tempId
+          )
 
-      if (response.code === 200 && response.data) {
-        // 替换临时消息
-        const index = messages.value.findIndex(m => m.id === tempMessage.id)
-        if (index > -1) {
-          messages.value[index] = response.data
+          if (result.success && result.messageId) {
+            // 更新消息状态和真实 ID
+            const index = messages.value.findIndex(m => m.id === tempId)
+            if (index > -1) {
+              messages.value[index] = {
+                ...messages.value[index],
+                id: result.messageId,
+                status: 'sent'
+              }
+              // 更新本地ID集合
+              localMessageIds.delete(tempId)
+              localMessageIds.add(result.messageId)
+            }
+            console.log('[Chat] ✅ Message sent via WebSocket with ACK')
+          }
+          else {
+            throw new Error('ACK failed')
+          }
         }
-
-        // 通过 WebSocket 通知（如果已连接）
-        // 服务器会自动推送给其他参与者
+        catch (wsError) {
+          console.warn('[Chat] WebSocket send failed, falling back to HTTP:', wsError)
+          // WebSocket 发送失败，回退到 HTTP
+          await sendViaHttp(tempMessage, tempId, content)
+        }
       }
       else {
-        // 发送失败，移除临时消息
-        const index = messages.value.findIndex(m => m.id === tempMessage.id)
-        if (index > -1) {
-          messages.value.splice(index, 1)
-        }
-        throw new Error('发送失败')
+        // WebSocket 未连接，使用 HTTP 发送
+        await sendViaHttp(tempMessage, tempId, content)
       }
     }
     catch (error) {
@@ -158,6 +239,92 @@ export function useMessages(options: UseMessagesOptions) {
     finally {
       sending.value = false
     }
+  }
+
+  /**
+   * 【新增】重试发送失败的消息
+   */
+  const retryMessage = async (tempId: number) => {
+    const failedMsg = failedMessages.value.get(tempId)
+    if (!failedMsg) {
+      console.warn('[Chat] No failed message found for retry:', tempId)
+      return
+    }
+
+    // 更新消息状态为发送中
+    const index = messages.value.findIndex(m => m.id === tempId)
+    if (index > -1) {
+      messages.value[index] = {
+        ...messages.value[index],
+        status: 'sending'
+      }
+    }
+
+    try {
+      if (socketManager.isConnected()) {
+        const result = await socketManager.retryFailedMessage(
+          tempId,
+          roomId,
+          failedMsg.content,
+          failedMsg.messageType
+        )
+
+        if (result.success && result.messageId) {
+          // 更新消息状态和真实 ID
+          if (index > -1) {
+            messages.value[index] = {
+              ...messages.value[index],
+              id: result.messageId,
+              status: 'sent'
+            }
+            localMessageIds.delete(tempId)
+            localMessageIds.add(result.messageId)
+          }
+          // 从失败列表移除
+          failedMessages.value.delete(tempId)
+          console.log('[Chat] ✅ Message retry successful')
+
+          uni.showToast({
+            title: '发送成功',
+            icon: 'success'
+          })
+        }
+      }
+      else {
+        // 尝试 HTTP 重发
+        const tempMessage = messages.value[index]
+        if (tempMessage) {
+          await sendViaHttp(tempMessage, tempId, failedMsg.content)
+          failedMessages.value.delete(tempId)
+        }
+      }
+    }
+    catch (error) {
+      console.error('[Chat] Retry failed:', error)
+      // 恢复失败状态
+      if (index > -1) {
+        messages.value[index] = {
+          ...messages.value[index],
+          status: 'failed'
+        }
+      }
+      uni.showToast({
+        title: '重试失败',
+        icon: 'none'
+      })
+    }
+  }
+
+  /**
+   * 【新增】删除失败的消息
+   */
+  const removeFailedMessage = (tempId: number) => {
+    const index = messages.value.findIndex(m => m.id === tempId)
+    if (index > -1) {
+      messages.value.splice(index, 1)
+      localMessageIds.delete(tempId)
+    }
+    failedMessages.value.delete(tempId)
   }
 
   /**
@@ -228,6 +395,7 @@ export function useMessages(options: UseMessagesOptions) {
 
   /**
    * 处理新消息（WebSocket）
+   * 增强版：支持去重、序列号更新
    */
   const handleNewMessage = (message: ChatMessage) => {
     console.log('[Chat] New message received:', message)
@@ -236,13 +404,43 @@ export function useMessages(options: UseMessagesOptions) {
     if (message.room_id !== roomId)
       return
 
-    // 检查是否已存在（避免重复）
-    const exists = messages.value.some(m => m.id === message.id)
-    if (exists)
+    // 【增强】多层去重检查
+    // 1. 检查消息ID是否在本地集合中
+    if (localMessageIds.has(message.id)) {
+      console.log('[Chat] ⚠️ Duplicate message (local cache):', message.id)
       return
+    }
+
+    // 2. 检查消息列表中是否已存在
+    const exists = messages.value.some(m => m.id === message.id)
+    if (exists) {
+      console.log('[Chat] ⚠️ Duplicate message (list):', message.id)
+      return
+    }
+
+    // 3. 检查是否是自己发送的消息（可能已通过乐观更新添加）
+    if (message.is_own) {
+      // 检查是否有对应的临时消息
+      const tempIndex = messages.value.findIndex(
+        m => m.is_own && m.content === message.content && m.id !== message.id
+      )
+      if (tempIndex > -1) {
+        // 可能是重复的确认消息，跳过
+        console.log('[Chat] ⚠️ Possible duplicate own message, skipping')
+        return
+      }
+    }
+
+    // 添加到本地ID集合
+    localMessageIds.add(message.id)
 
     // 添加到消息列表
     messages.value.push(message)
+
+    // 【新增】更新房间序列号（如果消息包含序列号）
+    if ((message as any).sequence) {
+      socketManager.updateRoomSequence(roomId, (message as any).sequence)
+    }
 
     // 触发回调
     onNewMessage?.(message)
@@ -293,6 +491,36 @@ export function useMessages(options: UseMessagesOptions) {
   }
 
   /**
+   * 【新增】处理消息发送失败事件
+   */
+  const handleMessageSendFailed = (data: { tempId: number, roomId: number, content: string }) => {
+    if (data.roomId !== roomId)
+      return
+
+    console.log('[Chat] Message send failed event:', data)
+
+    // 更新消息状态
+    const index = messages.value.findIndex(m => m.id === data.tempId)
+    if (index > -1) {
+      messages.value[index] = {
+        ...messages.value[index],
+        status: 'failed'
+      }
+    }
+
+    // 保存到失败列表
+    failedMessages.value.set(data.tempId, {
+      content: data.content,
+      messageType: MESSAGE_TYPES.TEXT
+    })
+
+    uni.showToast({
+      title: '消息发送失败，点击重试',
+      icon: 'none'
+    })
+  }
+
+  /**
    * 初始化 WebSocket 监听
    */
   const initSocketListeners = () => {
@@ -304,6 +532,9 @@ export function useMessages(options: UseMessagesOptions) {
 
     // 监听输入状态
     socketManager.on(SocketEvent.TYPING_START, handleTyping)
+
+    // 监听消息发送失败事件
+    socketManager.on('message_send_failed', handleMessageSendFailed)
   }
 
   /**
@@ -313,10 +544,14 @@ export function useMessages(options: UseMessagesOptions) {
     socketManager.off(SocketEvent.NEW_MESSAGE, handleNewMessage)
     socketManager.off(SocketEvent.MESSAGE_READ, handleMessageRead)
     socketManager.off(SocketEvent.TYPING_START, handleTyping)
+    socketManager.off('message_send_failed', handleMessageSendFailed)
 
     if (typingTimer) {
       clearTimeout(typingTimer)
     }
+
+    // 清理本地ID缓存
+    localMessageIds.clear()
   }
 
   // 组件卸载时清理
@@ -331,6 +566,7 @@ export function useMessages(options: UseMessagesOptions) {
     sending,
     hasMore,
     otherUserTyping,
+    failedMessages, // 【新增】失败消息列表
 
     // 方法
     loadMessages,
@@ -340,6 +576,8 @@ export function useMessages(options: UseMessagesOptions) {
     sendFileMessage,
     sendTypingStatus,
     initSocketListeners,
-    cleanupSocketListeners
+    cleanupSocketListeners,
+    retryMessage, // 【新增】重试发送
+    removeFailedMessage // 【新增】删除失败消息
   }
 }
