@@ -3,7 +3,7 @@
     <!-- 自定义导航栏 -->
     <view class="nav-bar" :style="{ paddingTop: `${safeAreaTop}px` }">
       <view class="nav-back" @tap="goBack">
-        <text class="back-icon">←</text>
+        <view class="i-carbon-arrow-left text-[40rpx] text-[#2c2c2c]" />
       </view>
       <text class="nav-title">{{ '商品详情' }}</text>
       <view class="nav-actions">
@@ -32,7 +32,7 @@
           <text class="meta-item">库存: {{ product.stock }}</text>
           <text class="meta-item">销量: {{ product.sales || 0 }}</text>
           <text v-if="product.brand" class="meta-item">品牌: {{ product.brand }}</text>
-          <text class="meta-item">商品ID: {{ productId }}</text>
+          <text class="meta-item">商品编号: {{ product.code }}</text>
           <text class="meta-item">登录状态: {{ tokenStore.hasLogin ? '已登录' : '未登录' }}</text>
         </view>
 
@@ -144,11 +144,12 @@ const { safeAreaTop, navbarHeight } = useNavbar()
 // 响应式数据
 const product = ref<ProductDetail>()
 const loading = ref(false)
+const productCode = ref<string>()
 const productId = ref<number>()
-const isFavorited = ref(false) // 收藏状态
-const quantity = ref(1) // 购买数量
-const isAddingToCart = ref(false) // 防止重复添加购物车
-const isBuying = ref(false) // 防止重复购买
+const isFavorited = ref(false)
+const quantity = ref(1)
+const isAddingToCart = ref(false)
+const isBuying = ref(false)
 
 // 获取token store
 const tokenStore = useTokenStore()
@@ -171,16 +172,17 @@ const productImages = computed(() => {
   return images
 })
 
-// 获取页面参数 - 通过onLoad生命周期获取
 const initPageData = (options: any) => {
   console.log('页面参数:', options)
 
-  if (options.id) {
-    productId.value = Number.parseInt(options.id) || 1
-    console.log('设置商品ID:', productId.value)
+  if (options.code) {
+    productCode.value = options.code
+  }
+  else if (options.id) {
+    productCode.value = options.id
   }
   else {
-    console.error('缺少商品ID参数')
+    console.error('缺少商品参数')
     uni.showToast({
       title: '商品参数错误',
       icon: 'none'
@@ -188,17 +190,16 @@ const initPageData = (options: any) => {
   }
 }
 
-// 加载商品详情
 const loadProductDetail = async () => {
-  if (!productId.value)
+  if (!productCode.value)
     return
 
   try {
     loading.value = true
-    const res = await getProductDetail(productId.value)
+    const res = await getProductDetail(productCode.value)
     product.value = res.data
+    productId.value = res.data.id
 
-    // 检查收藏状态
     if (tokenStore.hasLogin) {
       // eslint-disable-next-line ts/no-use-before-define
       await checkFavoriteStatus()
@@ -210,17 +211,25 @@ const loadProductDetail = async () => {
       brand: '',
       category_id: 1,
       category_name: '动漫',
+      code: '',
+      create_time: '',
       description: '名侦探柯南主角，工藤新一',
-      detail_html: '<h3><span style="font-size: 14px;">人物介绍</span></h3><p><span style="font-size: 14px;"><strong>工藤新一</strong></span><span style="font-size: 14px;">（日语：工藤新一）原是高中生侦探，后因被灌下APTX-4869 而身体缩小变成7岁小孩，因某些原因，便化名为**江户川柯南**（日语：江戸川コナン／えどがわ コナン</span><span style="font-size: 14px;"><sup> </sup></span><span style="font-size: 14px;">Edogawa Konan，是日本漫画家青山刚昌所创作的漫画作品《名侦探柯南》中的主人公。</span></p><p><img src="http://127.0.0.1:5050/static/temp/846e.png" alt="846e.png" data-href="http://127.0.0.1:5050/static/temp/846e.png" style="width: 100%;"/></p><h4><span style="font-size: 14px;">创造与构思</span></h4><p><span style="font-size: 14px;">将工藤新一变成一个小孩的想法，来源于《三毛猫福尔摩斯系列》的主角。青山刚昌的想法是，这只猫将表明解决此案件所需的关键证据。由孩子求助的新一所做的表演是为帮助周围的人进行调查。而新一的灵感来自于虚构的私家侦探工藤俊作。</span></p><p><span style="font-size: 14px;">工藤新一取自日本经典侦探连续剧《侦探物语》侦探物语的主角工藤俊作和日本科幻小说家星新一。 江户川柯南命名来源则取自日本推理小说 始祖 江户川乱步 和英国名推理小说家柯南·道尔。而青山透露过，他的责任编辑反对取“柯南”这个名字，因为与动画作品《未来少年柯南》中的主人公同名，并建议改名他为道尔。但青山坚持要使用柯南这个名字，认为它将会取代《未来少年柯南》。</span></p><p><span style="font-size: 14px;">在《绀青之拳》中，柯南化名为“亚瑟·平井”，同样取自这两位著名推理小说家。其中“平井”取自江户川乱步的本名平井太郎。</span></p><p><br></p>',
+      detail_html: '<h3><span style="font-size: 14px;">人物介绍</span></h3><p><span style="font-size: 14px;"><strong>工藤新一</strong></span><span style="font-size: 14px;">（日语：工藤新一）原是高中生侦探，后因被灌下APTX-4869 而身体缩小变成7岁小孩，因某些原因，便化名为**江户川柯南**（日语：江戸川コナン／えどがわ コナン</span><span style="font-size: 14px;"><sup> </sup></span><span style="font-size: 14px;">Edogawa Konan，是日本漫画家青山刚昌所创作的漫画作品《名侦探柯南》中的主人公。</span></p><p><img src="http://127.0.0.1:5050/static/temp/846e.png" alt="846e.png" data-href="http://127.0.0.1:5050/static/temp/846e.png" style="width: 100%;"/></p><h4><span style="font-size: 14px;">创造与构思</span></h4><p><span style="font-size: 14px;">将工藤新一变成一个小孩的想法，来源于《三毛猫福尔摩斯系列》的主角。青山刚昌的想法是，这只猫将表明解决此案件所需的关键证据。由孩子求助的新一所做的表演是为帮助周围的人进行调查。而新一的灵感来自于虚构的私家侦探工藤俊作。</span></p><p><span style="font-size: 14px;">工藤新一取自日本经典侦探连续剧《侦探物语》侦探物语的主角工藤俊作和日本科幻小说家星新一。 江户川柯南命名来源则取自日本推理小说 始祖 江户川乱步 和英国名推理小说家柯南·道尔。而青山透露过，他的责任编辑反对取"柯南"这个名字，因为与动画作品《未来少年柯南》中的主人公同名，并建议改名他为道尔。但青山坚持要使用柯南这个名字，认为它将会取代《未来少年柯南》。</span></p><p><span style="font-size: 14px;">在《绀青之拳》中，柯南化名为"亚瑟·平井"，同样取自这两位著名推理小说家。其中"平井"取自江户川乱步的本名平井太郎。</span></p><p><br></p>',
+      favorite_count: 0,
       id: 15,
-      images: [
-      ],
+      images: [],
       main_image: '',
       name: '工藤新一',
       price: 0,
+      sale_price: 0,
       sales: 0,
-      stock: 2
+      sort: 0,
+      status: 1,
+      stock: 2,
+      tags: [],
+      update_time: '',
     }
+    productId.value = 15
     await uni.showToast({
       title: '获取商品详情失败',
       icon: 'error'
@@ -319,7 +328,7 @@ const addToCart = async () => {
       title: '添加中...'
     })
 
-    const response = await addToCartAPI(productId.value, quantity.value)
+    const response = await addToCartAPI({ product_id: productId.value, quantity: quantity.value })
 
     console.log('API响应:', response)
 
@@ -422,7 +431,7 @@ const buyNow = async () => {
       title: '处理中...'
     })
 
-    const response = await addToCartAPI(productId.value, quantity.value)
+    const response = await addToCartAPI({ product_id: productId.value, quantity: quantity.value })
 
     uni.hideLoading()
 
@@ -571,11 +580,12 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-}
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
 
-.back-icon {
-  font-size: 36rpx;
-  color: #2c2c2c;
+  &:active {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
 }
 
 .nav-title {
@@ -793,15 +803,15 @@ onMounted(() => {
       margin: 0;
       line-height: 60rpx;
       border: none;
+    }
 
-      &::after {
-        border: none;
-      }
+    .quantity-btn::after {
+      border: none;
+    }
 
-      &.disabled {
-        color: #ccc;
-        background: #f0f0f0;
-      }
+    .quantity-btn.disabled {
+      color: #ccc;
+      background: #f0f0f0;
     }
 
     .quantity-value {
@@ -839,10 +849,12 @@ onMounted(() => {
   justify-content: center;
   transform: translateZ(0);
   -webkit-font-smoothing: antialiased;
+}
 
-  &::after {
-    border: none;
-  }
+.btn-favorite::after,
+.btn-cart::after,
+.btn-buy::after {
+  border: none;
 }
 
 .btn-favorite {

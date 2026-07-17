@@ -115,12 +115,9 @@ import { useUserStore } from '@/store/user'
 
 // 扩展 Article 类型以包含点赞数
 interface ExtendedArticle extends Article {
-  likes?: number
   nickname?: string
   comment_statistics?: any
-  comment_count?: number
   category?: any
-  update_date?: string
 }
 
 definePage({

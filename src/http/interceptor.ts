@@ -6,6 +6,9 @@ import { stringifyQuery } from './tools/queryString'
 
 // 请求基准地址
 const baseUrl = getEnvBaseUrl()
+const apiPrefix = '/api/v1'
+const prefixExcludeList = ['/api/v1/', '/chat-system/']
+const prefixExcludeExactList = ['/auth/refreshToken']
 
 // 拦截器配置
 const httpInterceptor = {
@@ -25,16 +28,19 @@ const httpInterceptor = {
     if (!options.url.startsWith('http')) {
       // #ifdef H5
       if (JSON.parse(import.meta.env.VITE_APP_PROXY_ENABLE)) {
+        if (!options.url.startsWith('/chat-system/')) {
         // 自动拼接代理前缀
-        options.url = import.meta.env.VITE_APP_PROXY_PREFIX + options.url
+          options.url = import.meta.env.VITE_APP_PROXY_PREFIX + options.url
+        }
       }
       else {
         options.url = baseUrl + options.url
       }
       // #endif
-      // 非H5正常拼接
+
+      // 非H5、小程序端正常拼接
       // #ifndef H5
-      options.url = baseUrl + options.url
+      options.url = baseUrl + apiPrefix + options.url
       // #endif
       // TIPS: 如果需要对接多个后端服务，也可以在这里处理，拼接成所需要的地址
     }

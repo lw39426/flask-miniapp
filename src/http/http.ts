@@ -31,19 +31,13 @@ export function http<T>(options: CustomRequestOptions) {
         if (res.statusCode >= 200 && res.statusCode < 300) {
           // 2.1  处理业务逻辑错误
           const { code, message, data } = res.data as IResponse<T>
-          // console.log('222:', res.data)
-          // 429 业务码：请求过于频繁，专用提示并中止
-          if (code === 429) {
-            !options.hideErrorToast && uni.showToast({
-              icon: 'none',
-              title: message || '请求过于频繁，请稍后再试',
-            })
-            // eslint-disable-next-line prefer-promise-reject-errors
-            return reject(res.data as any)
-          }
           // 0和200当做成功都很普遍，这里直接兼容两者，见 ResultEnum
           if (code !== ResultEnum.Success0 && code !== ResultEnum.Success200) {
-            throw new Error(`请求错误[${code}]：${message}`)
+            const bizError = new Error(message || '业务处理失败') as Error & Record<string, any>
+            bizError.code = code
+            bizError.data = data
+            bizError.raw = res.data
+            return reject(bizError)
           }
           return resolve(res.data as T)
         }

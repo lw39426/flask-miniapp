@@ -85,7 +85,7 @@
             v-for="product in searchResults"
             :key="product.id"
             class="product-item"
-            @tap="goToDetail(product.id)"
+            @tap="goToDetail(product)"
           >
             <image class="product-image" :src="product.main_image" mode="aspectFill" />
             <view class="product-info">
@@ -226,7 +226,7 @@ const onSearch = async (isRefresh = false) => {
     const data: any = await searchProducts({
       keyword: searchKeyword,
       page: page.value,
-      per_page: 10,
+      pageSize: 10,
       sort_by: sortBy.value,
       sort_order: sortOrder.value
     })
@@ -324,10 +324,9 @@ const goBack = () => {
   uni.navigateBack()
 }
 
-// 跳转到商品详情
-const goToDetail = (productId: number) => {
+const goToDetail = (product: Product) => {
   uni.navigateTo({
-    url: `/pages/product/detail?id=${productId}`
+    url: `/pages/product/detail?code=${product.code}`
   })
 }
 

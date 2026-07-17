@@ -37,7 +37,7 @@
           v-for="product in products"
           :key="product.id"
           class="product-item"
-          @tap="goToDetail(product.id)"
+          @tap="goToDetail(product)"
         >
           <image class="product-image" :src="product.main_image" mode="aspectFit" />
           <view class="product-info">
@@ -120,14 +120,14 @@ const loadProducts = async (isRefresh = false) => {
     let data
     // 根据分类Id判断，根据分类Id还是关键字搜索请求数据
     if (categoryId.value) {
-      const res = await getCategoryProducts(categoryId.value, page.value, 10)
-      data = res.data || []
+      const res = await getCategoryProducts(categoryId.value, { page: page.value, pageSize: 10 })
+      data = res.data.products || []
       categoryName.value = res.data.category_name
     }
     else {
       const res = await searchProducts({
         page: page.value,
-        per_page: 10,
+        pageSize: 10,
         sort_by: sortBy.value,
         sort_order: sortOrder.value
       })
@@ -189,10 +189,9 @@ const goBack = () => {
   uni.navigateBack()
 }
 
-// 跳转到商品详情
-const goToDetail = (productId: number) => {
+const goToDetail = (product: Product) => {
   uni.navigateTo({
-    url: `/pages/product/detail?id=${productId}`
+    url: `/pages/product/detail?code=${product.code}`
   })
 }
 

@@ -57,19 +57,19 @@
                   :class="{ checked: item.checked }"
                 />
               </view>
-              <image class="item-image" :src="getFullImageUrl(item.product_image)" mode="aspectFill" />
+              <image class="item-image" :src="getFullImageUrl(item.product.main_image)" mode="aspectFill" />
               <view class="item-content">
                 <view class="item-top">
-                  <text class="item-name">{{ item.product_name }}</text>
+                  <text class="item-name">{{ item.product.name }}</text>
                   <image class="h-[40rpx] w-[40rpx]" src="@/static/delete.svg" mode="aspectFill" @click="removeItem(item.id)" />
                 </view>
 
                 <view class="item-info">
-                  <text class="stock-text">库存: {{ item.stock }}</text>
+                  <text class="stock-text">库存: {{ item.product.stock }}</text>
                 </view>
 
                 <view class="item-bottom">
-                  <text class="item-price">¥{{ CartUtils.formatPrice(item.price) }}</text>
+                  <text class="item-price">¥{{ CartUtils.formatPrice(item.product.sale_price) }}</text>
                   <view class="quantity-control">
                     <view class="quantity-btn minus" @tap.stop="decreaseQuantity(index)">
                       -
@@ -222,22 +222,7 @@ const queryList = async (pageNo: number, _pageSize: number) => {
 
     const response = await getCartItems()
     if (response.code === 200) {
-      // 假设接口一次性返回所有数据
-      // 转换为带状态的列表，默认全选
-      const items = Array.from({ length: 10 }, (_, i) => ({
-        id: i + 1,
-        product_name: `商品${i + 1}`,
-        productId: i + 1,
-        quantity: i + 1,
-        price: (i + 1) * 10,
-        stock: 100,
-        // 这里只是模拟数据，实际应该使用 response.data
-        // ...response.data[i]
-      })) as any
-
-      // 实际开发中应该使用真实数据
-      // const items = response.data
-
+      const items = response.data.items || []
       cartItems.value = items.map(item => ({
         ...item,
         checked: true,
@@ -283,7 +268,7 @@ const increaseQuantity = async (index: number) => {
   const item = cartItems.value[index]
 
   // 检查库存
-  if (item.quantity >= item.stock) {
+  if (item.quantity >= item.product.stock) {
     uni.showToast({
       title: '库存不足',
       icon: 'none',
@@ -309,7 +294,7 @@ const decreaseQuantity = async (index: number) => {
 // 更新商品数量
 const updateQuantity = async (cartItemId: number, quantity: number, index: number) => {
   try {
-    const response = await updateCartItem(cartItemId, quantity)
+    const response = await updateCartItem(cartItemId, { quantity })
     if (response.code === 200) {
       // 如果数量为0，从列表中移除
       if (quantity === 0) {
@@ -432,7 +417,7 @@ const checkout = () => {
   }
 
   // 检查库存
-  const outOfStockItems = checkedItems.value.filter(item => item.quantity > item.stock)
+  const outOfStockItems = checkedItems.value.filter(item => item.quantity > item.product.stock)
   if (outOfStockItems.length > 0) {
     uni.showToast({
       title: '部分商品库存不足',

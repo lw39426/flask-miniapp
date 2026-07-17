@@ -42,7 +42,7 @@
           >
             <image
               class="waterfall-image"
-              :src="item.image"
+              :src="item.main_image"
               mode="widthFix"
               :data-product-id="item.id"
               :data-column-index="colIndex"
@@ -297,7 +297,7 @@ const loadCategoryProducts = async (categoryId: number) => {
 
   try {
     // 这里应该调用真实的API
-    const res = await getCategoryProducts(categoryId, { page: 1, limit: 6 })
+    const res = await getCategoryProducts(categoryId, { page: 1, pageSize: 6 })
     console.log('获取分类商品成功:', res)
     if (res.code !== 200) {
       throw new Error('获取分类商品成功')
@@ -316,12 +316,26 @@ const loadCategoryProducts = async (categoryId: number) => {
     // 临时模拟数据，增加更多样化的商品
     const mockProducts: ProductWithHeight[] = Array.from({ length: 6 }, (_, index) => ({
       id: 0 + index,
+      code: `SKU${index}`,
+      description: '',
       name: `${currentCategoryName.value}商品 ${index + 1} - ${['精选', '热销', '新品', '限时', '特价', '推荐'][index] || '优质'}`,
       price: Math.floor(Math.random() * 200) + 50,
       sale_price: Math.floor(Math.random() * 150) + 30,
       image: `https://picsum.photos/300/${200 + Math.floor(Math.random() * 200)}`,
+      main_image: `https://picsum.photos/300/${200 + Math.floor(Math.random() * 200)}`,
+      images: [],
+      detail_html: '',
       sales: Math.floor(Math.random() * 1000) + 10,
       stock: Math.floor(Math.random() * 100) + 1,
+      category_id: 0,
+      status: 1,
+      sort: 0,
+      brand: '',
+      favorite_count: 0,
+      category_name: '',
+      tags: [],
+      create_time: '',
+      update_time: '',
     }))
     products.value = mockProducts
     layoutWaterfall(mockProducts)

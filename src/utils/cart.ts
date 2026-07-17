@@ -51,7 +51,7 @@ export const addProductToCart = async (
     })
 
     console.log('调用API addToCart')
-    const response = await addToCart(productId, quantity)
+    const response = await addToCart({ product_id: productId, quantity })
     console.log('API响应:', response)
 
     uni.hideLoading()

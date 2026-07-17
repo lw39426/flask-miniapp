@@ -50,14 +50,9 @@ export interface AuthStorage {
  * 获取验证码
  */
 export interface ICaptcha {
-  code: string | number
-  data: {
-    captchaEnabled: boolean
-    captcha_key: string
-    image: string
-  }
-  message: string
-  success: boolean
+  captchaEnabled?: boolean
+  captcha_key: string
+  image: string
 }
 /**
  * 上传成功的信息

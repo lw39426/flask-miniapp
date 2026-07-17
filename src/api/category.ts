@@ -1,99 +1,100 @@
-import type { ApiResponse } from './home'
+/**
+ * 商品模块 API
+ * 前缀: /api/v1/product
+ * 无鉴权要求
+ * 基于 md/用户端接口对接文档.md
+ */
+
+import type { ApiResponse, Category, PaginationParams, Product } from './types/index'
 import { http } from '@/http/http'
 
-// 分类相关类型定义
-export interface Category {
-  id: number
-  name: string
-  imageUrl: string
-  children: Category[]
-}
+// 向后兼容：重新导出类型
+export type { Category, Product }
 
-export interface Product {
-  id: number
-  name: string
-  price: number
-  stock: number
-  sales: number
-  main_image: string
-  category_id?: number
-  category_name?: string
-}
-// 分类商品响应
-export interface CategoryProductsResponse {
-  category_name: string
-  data: Product[]
-  total: number
-  pages: number
-  page: number
-  per_page: number
-}
+// 向后兼容：ProductDetail 即为 Product
+export type ProductDetail = Product
 
-export interface SearchProductsResponse {
-  code: number
-  message: string
-  data?: {
-    products: Product[]
-    total: number
-    pages: number
-    page: number
-    per_page: number
-  }
-}
-
-export interface ProductDetail {
-  id: number
-  name: string
-  description: string
-  price: number
-  stock: number
-  sales: number
-  main_image: string
-  images: string[]
-  detail_html: string
-  category_id: number
-  category_name: string
-  brand: string
-}
-
-const BASE_URL = '/miniapp' // API基础路径
-
-// API 接口函数
-/**
- * 获取分类列表（树形结构）
- */
-export const getCategoryList = async (): Promise<ApiResponse<Category[]>> => {
-  return await http.get<ApiResponse<Category[]>>(`${BASE_URL}/category/list`)
-}
-
-/**
- * 获取分类下的商品
- */
-export const getCategoryProducts = async (categoryId: number, page = 1, limit = 10): Promise<ApiResponse<CategoryProductsResponse>> => {
-  return await http.get<ApiResponse<CategoryProductsResponse>>(`${BASE_URL}/category/${categoryId}/products`, {
-    params: { page, limit }
-  })
-}
-
-/**
- * 获取商品详情
- */
-export const getProductDetail = async (productId: number): Promise<ApiResponse<ProductDetail>> => {
-  return await http.get<ApiResponse<ProductDetail>>(`${BASE_URL}/product/${productId}`)
-}
-
-/**
- * 商品搜索
- */
-export const searchProducts = async (params: {
-  page?: number
-  per_page?: number
+// 商品搜索参数
+export interface ProductSearchParams extends PaginationParams {
   keyword?: string
   category_id?: number
   min_price?: number
   max_price?: number
   sort_by?: 'create_time' | 'price' | 'sales'
   sort_order?: 'asc' | 'desc'
-}): Promise<SearchProductsResponse> => {
-  return await http.get<SearchProductsResponse>(`${BASE_URL}/product/search`, { params })
+}
+
+// 分类商品参数
+export interface CategoryProductsParams extends PaginationParams {
+  sort_by?: 'create_time' | 'sales' | 'price'
+  sort_order?: 'asc' | 'desc'
+}
+
+// 分类商品响应
+export interface CategoryProductsResponse {
+  category_name: string
+  products: Product[]
+  pagination: {
+    page: number
+    pageSize: number
+    total: number
+    pages: number
+  }
+}
+
+/**
+ * 获取商品详情
+ * GET /api/v1/product/<product_code>
+ */
+export function getProductDetail(productCode: string): Promise<ApiResponse<Product>> {
+  return http.get<ApiResponse<Product>>(`/product/${productCode}`)
+}
+
+/**
+ * 商品搜索
+ * GET /api/v1/product/search
+ */
+export function searchProducts(params: ProductSearchParams): Promise<ApiResponse<{
+  products: Product[]
+  pagination: {
+    page: number
+    pageSize: number
+    total: number
+    pages: number
+  }
+}>> {
+  return http.get<ApiResponse<{
+    products: Product[]
+    pagination: {
+      page: number
+      pageSize: number
+      total: number
+      pages: number
+    }
+  }>>('/product/search', params)
+}
+
+/**
+ * 获取商品分类树
+ * GET /api/v1/product/category/list
+ */
+export function getCategoryTree(): Promise<ApiResponse<Category[]>> {
+  return http.get<ApiResponse<Category[]>>('/product/category/list')
+}
+
+/**
+ * 向后兼容别名
+ * @deprecated 使用 getCategoryTree
+ */
+export const getCategoryList = getCategoryTree
+
+/**
+ * 获取分类下的商品
+ * GET /api/v1/product/category/<category_id>/products
+ */
+export function getCategoryProducts(
+  categoryId: number,
+  params: CategoryProductsParams = {}
+): Promise<ApiResponse<CategoryProductsResponse>> {
+  return http.get<ApiResponse<CategoryProductsResponse>>(`/product/category/${categoryId}/products`, params)
 }

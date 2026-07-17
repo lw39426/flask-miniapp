@@ -165,7 +165,7 @@ export const mockPagination = {
   has_next: false,
   has_prev: false,
   page: 1,
+  pageSize: 20,
   pages: 1,
-  per_page: 20,
   total: 3
 }

@@ -197,11 +197,11 @@ const loadCategories = async () => {
 const loadHotProducts = async (categoryId: number) => {
   try {
     detailLoading.value = true
-    const res = await getCategoryProducts(categoryId, 1, 6)
-    hotProducts.value[categoryId] = res.data.data
+    const res = await getCategoryProducts(categoryId, { page: 1, pageSize: 6 })
+    hotProducts.value[categoryId] = res.data.products
     // 布局瀑布流
     // eslint-disable-next-line ts/no-use-before-define
-    layoutWaterfall(res.data.data)
+    layoutWaterfall(res.data.products)
   }
   catch (error) {
     console.error('获取热门商品失败:', error)
@@ -324,10 +324,9 @@ const goToSubCategory = (sub: Category) => {
   })
 }
 
-// 跳转到商品详情
 const goToProduct = (product: Product) => {
   uni.navigateTo({
-    url: `/pages/product/detail?id=${product.id}`
+    url: `/pages/product/detail?code=${product.code}`
   })
 }
 

@@ -281,11 +281,12 @@ export const useTokenStore = defineStore(
           throw new Error('无效的refreshToken')
         }
 
-        const refreshToken = tokenInfo.value.refresh_token
+        const refreshTokenValue = tokenInfo.value.refresh_token
         // 注意：http请求已经会自动添加Authorization头，不需要手动添加
-        const res = await _refreshToken(refreshToken)
+        const res = await _refreshToken({ refresh_token: refreshTokenValue })
         console.log('刷新token-res: ', res)
-        setTokenInfo(res)
+        // 刷新token只返回access_token，合并到现有tokenInfo
+        setTokenInfo({ ...tokenInfo.value, access_token: res.access_token })
         return res
       }
       catch (error) {

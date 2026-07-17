@@ -1,103 +1,23 @@
+/**
+ * 首页模块 API
+ * 前缀: /api/v1
+ * 无鉴权要求
+ * 基于 md/用户端接口对接文档.md
+ */
+
+import type { Announcement, ApiResponse, Article, Banner, Category, PaginationParams, Product, Tag } from './types/index'
 import { http } from '@/http/http'
 
-// #region 后端接口返回的类型定义
+// 向后兼容：重新导出类型
+export type { Article, Banner, Category, Product }
 
-/** API通用分页参数 */
-export interface PaginationParams {
-  page?: number
-  limit?: number
-}
-
-/** API通用返回结构 */
-export interface ApiResponse<T> {
-  code: number
-  message: string
-  data: T
-}
-
-/** 分页数据结构 */
-export interface PaginatedData<T> {
-  category_name?: string
-  products?: T[]
-  data?: T[]
-  pagination: {
-    page: number
-    limit: number
-    total: number
-    pages: number
-  }
-}
-
-/** 标签类型 */
-export interface Tag {
-  id: number
-  name: string
-  color?: string
-  description?: string
-}
-
-/** Banner轮播图 */
-export interface Banner {
-  id: number
-  title: string
-  image?: string
-  image_url?: string
-  link_type: 'product' | 'page' | 'webview'
-  link_value: number | string
-  description?: string | null
-}
-
-/** 商品分类 */
-export interface Category {
-  id: number
-  name: string
-  image: string
-  product_count?: number
-  children?: Category[]
-}
-
-/** 商品信息 */
-export interface Product {
-  id: number
-  name: string
-  price: number
-  sale_price?: number
-  image: string
-  sales?: number
-  stock?: number
-  brand?: string
-  category_name?: string
-  is_new?: boolean
-  desc?: string
-  originalPrice?: string | number
-  tags?: Tag[]
-}
-
-/** 文章信息 */
-export interface Article {
-  id: number
-  title: string
-  content?: string
-  image: string
-  author?: string | {
-    id: number
-    nickname?: string
-    avatar?: string
-    description?: string
-  }
-  category_name?: string
-  published_date?: string
-  views?: number
-  description?: string
-  tags?: Tag[]
-}
-
-/** 首页聚合数据类型 */
+// 首页聚合数据类型
 export interface HomeData {
   banners: Banner[]
   categories: Category[]
   featured: {
     tag_name: string
+    tag_color?: string
     products: Product[]
   }
   hot_products: Product[]
@@ -105,58 +25,152 @@ export interface HomeData {
   new_products: Product[]
 }
 
-// #endregion
+// 首页数据响应（含缓存信息）
+export interface HomeDataResponse extends ApiResponse<HomeData> {
+  source?: string
+  cache_key?: string
+}
 
-const BASE_URL = '/miniapp' // API基础路径
+// Banner 查询参数
+export interface BannerParams {
+  placement_key: string
+  client_type?: 'all' | 'web' | 'miniapp' | 'app'
+}
 
-/**
- * @description 获取小程序首页所有数据
- * @summary 一次性返回首页所需的所有数据，减少请求次数
- */
-export function getHomeData(): Promise<ApiResponse<HomeData>> {
-  return http.get<ApiResponse<HomeData>>(`${BASE_URL}/home/data`)
+// Banner 响应
+export interface BannerResponse {
+  banners: Banner[]
+  source: string
+  cache_key: string
+  cached: boolean
+}
+
+// 精选商品响应
+export interface FeaturedProductsResponse {
+  tag_name: string
+  tag_color: string
+  products: Product[]
+  pagination: {
+    page: number
+    pageSize: number
+    total: number
+    pages: number
+  }
+}
+
+// 商品列表响应（带分页）
+export interface ProductListResponse {
+  products: Product[]
+  pagination: {
+    page: number
+    pageSize: number
+    total: number
+    pages: number
+  }
+}
+
+// 文章列表响应（带分页）
+export interface ArticleListResponse {
+  articles: Article[]
+  pagination: {
+    page: number
+    pageSize: number
+    total: number
+    pages: number
+  }
+}
+
+// 公告查询参数
+export interface AnnouncementParams {
+  position?: 'homepage' | 'user_center' | 'product_page'
+  terminal?: string
+  announcement_type?: string
+  force_only?: boolean
+}
+
+// 标签查询参数
+export interface TagParams {
+  type?: 1 | 2 | 3
 }
 
 /**
- * @description 获取轮播图数据
- * @param {object} query - 查询参数
- * @param {number} [query.position] - 轮播图位置（可选）
- * home_top_banner、home_middle_banner、home_bottom_banner
- * @return {Promise<Banner[]>} 轮播图数据列表
+ * 获取首页聚合数据
+ * GET /api/v1/home/data
  */
-export function getBanners(query): Promise<Banner[]> {
-  return http.get<Banner[]>(`${BASE_URL}/banners`, query)
+export function getHomeData(): Promise<HomeDataResponse> {
+  return http.get<HomeDataResponse>('/home/data')
 }
 
 /**
- * @description 获取商品分类数据
+ * 获取 Banner 轮播图
+ * GET /api/v1/banners
  */
-export function getCategories(): Promise<Category[]> {
-  return http.get<Category[]>(`${BASE_URL}/home/categories`)
+export function getBanners(params: BannerParams): Promise<ApiResponse<BannerResponse>> {
+  return http.get<ApiResponse<BannerResponse>>('/banners', params)
 }
 
 /**
- * @description 获取指定分类下的商品
- * @param {number} categoryId - 分类ID
- * @param {PaginationParams} params - 分页参数
+ * 获取公告列表
+ * GET /api/v1/announcements
  */
-export function getCategoryProducts(categoryId: number, params: PaginationParams): Promise<ApiResponse<PaginatedData<Product>>> {
-  console.log('实际发出的 params：', params)
-  return http.get<ApiResponse<PaginatedData<Product>>>(`${BASE_URL}/home/category/${categoryId}/products`, params)
+export function getAnnouncements(params?: AnnouncementParams): Promise<ApiResponse<Announcement[]>> {
+  return http.get<ApiResponse<Announcement[]>>('/announcements', params || {})
 }
 
 /**
- * @description 获取热门商品
- * @param {PaginationParams} params - 分页参数
+ * 获取首页商品分类（含 product_count）
+ * GET /api/v1/home/categories
  */
-export function getHotProducts(params: PaginationParams): Promise<PaginatedData<Product>> {
-  return http.get<PaginatedData<Product>>(`${BASE_URL}/home/hot-products`, params)
+export function getHomeCategories(): Promise<ApiResponse<Category[]>> {
+  return http.get<ApiResponse<Category[]>>('/home/categories')
 }
 
 /**
- * @description 获取推荐文章
- * @param {PaginationParams & { category_id?: number }} params
+ * 获取精选商品
+ * GET /api/v1/home/featured-products
  */
-export function getArticles(params: PaginationParams & { category_id?: number }): Promise<PaginatedData<Article>> {
-  return http.get<PaginatedData<Article>>(`${BASE_URL}/home/articles`, params)
+export function getFeaturedProducts(params: PaginationParams = {}): Promise<ApiResponse<FeaturedProductsResponse>> {
+  return http.get<ApiResponse<FeaturedProductsResponse>>('/home/featured-products', params)
+}
+
+/**
+ * 获取热门商品（按销量降序）
+ * GET /api/v1/home/hot-products
+ */
+export function getHotProducts(params: PaginationParams = {}): Promise<ApiResponse<ProductListResponse>> {
+  return http.get<ApiResponse<ProductListResponse>>('/home/hot-products', params)
+}
+
+/**
+ * 获取推荐文章
+ * GET /api/v1/home/articles
+ */
+export function getHomeArticles(params: PaginationParams & { category_id?: number } = {}): Promise<ApiResponse<ArticleListResponse>> {
+  return http.get<ApiResponse<ArticleListResponse>>('/home/articles', params)
+}
+
+/**
+ * 获取新品推荐
+ * GET /api/v1/new-products
+ */
+export function getNewProducts(params: PaginationParams = {}): Promise<ApiResponse<ProductListResponse>> {
+  return http.get<ApiResponse<ProductListResponse>>('/new-products', params)
+}
+
+/**
+ * 获取标签列表
+ * GET /api/v1/tags
+ */
+export function getTags(params: TagParams = { type: 1 }): Promise<ApiResponse<Tag[]>> {
+  return http.get<ApiResponse<Tag[]>>('/tags', params)
+}
+
+// ---- 向后兼容 ----
+
+/**
+ * 获取指定分类下的商品（旧版，现转发到 category 模块）
+ * @deprecated 使用 @/api/category 中的 getCategoryProducts
+ */
+export function getCategoryProducts(categoryId: number, params: PaginationParams = {}): Promise<ApiResponse<any>> {
+  return http.get<ApiResponse<any>>(`/product/category/${categoryId}/products`, params)
 }

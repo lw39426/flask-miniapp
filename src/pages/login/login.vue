@@ -299,10 +299,11 @@ const handleSubmit = async () => {
     }
   }
   catch (error) {
-    // 统一处理登录失败
-    toast(error?.message || '登录失败，请重试', {
-      type: 'fail',
-      timeout: 2500
+    console.log('账号密码登录失败:', error)
+    uni.showToast({
+      title: error?.message || '登录失败，请重试',
+      icon: 'error',
+      duration: 2500
     })
   }
 }
@@ -335,6 +336,7 @@ const handlePhoneSubmit = async () => {
     }
 
     const res = await tokenStore.loginByPhone(phoneLoginForm)
+    console.log('手机号登录结果:', res)
     if (res) {
       uni.showToast({
         title: '登录成功',
@@ -511,7 +513,8 @@ const handleWechatPhoneLogin = async (e) => {
 
 // 获取验证码
 const getCaptcha = async () => {
-  const { data } = await getCode()
+  const data = await getCode()
+  console.log('获取验证码返回:', data)
   captchaImage.value = data?.image // base64 字符串
   form.captcha_key = data?.captcha_key // 隐藏字段，随表单回传
 }

@@ -77,9 +77,7 @@
       <!-- 产品分类和商品组件 -->
       <CategoryProducts
         :categories="navItems || []"
-        :default-category-id="activeCategory || (navItems[0] && navItems[0].id)"
-        @category-change="onCategoryChange"
-        @product-click="goToProduct"
+        @product-click="goToProductDetail"
         @view-more="goToCategoryDetail"
       />
 
@@ -135,6 +133,7 @@
 import type { Article, Banner, Product } from '@/api/home'
 import { onMounted, ref } from 'vue'
 import { getBanners, getHomeData } from '@/api/home'
+import { showAppModal } from '@/components/AppModal'
 import GlobalLoading from '@/components/GlobalLoading.vue'
 import NavBarSearch from '@/components/NavBarSearch.vue'
 import { useUserStore } from '@/store/user'
@@ -156,7 +155,6 @@ const recommendItems = ref<Product[]>([])
 const products = ref<Product[]>([])
 const articles = ref<Article[]>([])
 const hot_products = ref<Product[]>([])
-const activeCategory = ref<number | null>(null) // 激活的分类标签
 
 const isLoading = ref(true)
 const isGlobalLoading = ref(true)
@@ -172,9 +170,9 @@ const onBannerTap = (banner: Banner) => {
 }
 const onNavTap = (nav: { url: string }) => uni.navigateTo({ url: nav.url })
 const goToMore = () => uni.navigateTo({ url: '/pages/product/list?type=recommend' })
-const goAlert = (msg: string) => uni.showModal({ title: '傻逼一个嘻嘻嘻', content: msg, icon: 'none', duration: 2000 })
+const goAlert = (msg: string) => showAppModal({ title: '傻逼一个嘻嘻嘻', content: msg })
 /** 跳转至商品详情 */
-const goToProduct = (product: { id: number }) => uni.navigateTo({ url: `/pages/product/detail?id=${product.id}` })
+const goToProductDetail = (product: { code: string }) => uni.navigateTo({ url: `/pages/product/detail?code=${product.code}` })
 const goToArticle = (art: Article) => uni.navigateTo({ url: `/pages/article/detail?id=${art.id}` })
 /** 跳转到更多文章页面 */
 const goToMoreArticles = () => uni.navigateTo({ url: '/pages/article/list' })
@@ -215,11 +213,6 @@ const formatDate = (dateStr: string) => {
   return date.toLocaleDateString()
 }
 
-/** 分类变更处理 */
-const onCategoryChange = (categoryId: number, categoryName: string) => {
-  activeCategory.value = categoryId
-}
-
 /** 跳转到分类详情页 */
 const goToCategoryDetail = (categoryId: number | null) => {
   if (categoryId) {
@@ -258,11 +251,6 @@ const loadHomeData = async () => {
       url: `/pages/product/list?categoryId=${c.id}`
     }))
 
-    // 默认选中第一个分类
-    if (navItems.value.length > 0) {
-      activeCategory.value = navItems.value[0].id
-    }
-
     // 今日推荐使用 new_products
     recommendItems.value = (res.data.new_products || []).slice(0, 8)
 
@@ -275,25 +263,35 @@ const loadHomeData = async () => {
   catch (e: any) {
     // 演示时使用----
     banners.value = [{
-      id: null,
+      id: 1,
       title: '汤姆猫',
       image: 'https://www.toopic.cn/public/uploads/small/1759043205775175904320543.jpg',
+      image_url: 'https://www.toopic.cn/public/uploads/small/1759043205775175904320543.jpg',
       link_type: 'product',
-      link_value: 7,
-      description: '猫和老鼠的汤姆猫'
+      link_value: '7',
+      link_target: '7',
+      placement_key: '',
+      client_type: '',
+      sort_order: 0,
+      status: true,
     }]
     bannersMid.value = [{
-      id: null,
+      id: 2,
       title: '杰瑞鼠',
       image: 'https://www.toopic.cn/public/uploads/small/1759043205775175904320543.jpg',
+      image_url: 'https://www.toopic.cn/public/uploads/small/1759043205775175904320543.jpg',
       link_type: 'product',
-      link_value: 8,
-      description: '猫和老鼠的杰瑞鼠'
+      link_value: '8',
+      link_target: '8',
+      placement_key: '',
+      client_type: '',
+      sort_order: 0,
+      status: true,
     }]
     articles.value = [
       {
         author: '匿名用户',
-        category_name: '\u52A8\u6F2B\u5C0F\u8BF4',
+        category_name: '动漫小说',
         content: '',
         description: '动画《狐妖小红娘》改编自小新创作的同名漫画作品 [1]。作品主要讲述了以红娘为职业的狐妖在为前世恋人牵红线过程当中发生的一系列有趣、神秘的故事',
         id: 23,
@@ -303,15 +301,21 @@ const loadHomeData = async () => {
           {
             color: '#ff4141',
             id: 7,
-            name: '\u70ED\u95E8\u63A8\u8350'
+            name: '热门推荐'
           }
         ],
         title: '《狐妖小红娘》',
-        views: 1505
+        views: 1505,
+        status: 1,
+        category_id: 1,
+        likes: 0,
+        comment_count: 0,
+        favorite_count: 0,
+        update_date: '2024-06-15 22:26:16'
       },
       {
         author: '匿名用户',
-        category_name: '\u52A8\u6F2B\u5C0F\u8BF4',
+        category_name: '动漫小说',
         content: '',
         description: '动画《狐妖小红娘》改编自小新创作的同名漫画作品 [1]。作品主要讲述了以红娘为职业的狐妖在为前世恋人牵红线过程当中发生的一系列有趣、神秘的故事',
         id: 22,
@@ -321,15 +325,21 @@ const loadHomeData = async () => {
           {
             color: '#ff4141',
             id: 7,
-            name: '\u70ED\u95E8\u63A8\u8350'
+            name: '热门推荐'
           }
         ],
         title: '《凡人修仙传》',
-        views: 5213
+        views: 5213,
+        status: 1,
+        category_id: 1,
+        likes: 0,
+        comment_count: 0,
+        favorite_count: 0,
+        update_date: '2024-06-12 22:15:20'
       },
       {
         author: '匿名用户',
-        category_name: '\u52A8\u6F2B\u5C0F\u8BF4',
+        category_name: '动漫小说',
         content: '',
         description: '何青青表示，被校草看上真的很无奈，她只想离他远远的，可奈何无法逃脱他的手掌心。',
         id: 22,
@@ -339,15 +349,21 @@ const loadHomeData = async () => {
           {
             color: '#ff4141',
             id: 7,
-            name: '\u70ED\u95E8\u63A8\u8350'
+            name: '热门推荐'
           }
         ],
         title: '《余生有你：我爱青菜》',
-        views: 5213
+        views: 5213,
+        status: 1,
+        category_id: 1,
+        likes: 0,
+        comment_count: 0,
+        favorite_count: 0,
+        update_date: '2024-05-12 22:15:20'
       },
       {
         author: '匿名用户',
-        category_name: '\u52A8\u6F2B\u5C0F\u8BF4',
+        category_name: '动漫小说',
         content: '',
         description: '窗台上的玻璃罐积着薄灰，标签边缘卷翘成记忆的弧度',
         id: 22,
@@ -357,15 +373,21 @@ const loadHomeData = async () => {
           {
             color: '#ff4141',
             id: 7,
-            name: '\u70ED\u95E8\u63A8\u8350'
+            name: '热门推荐'
           }
         ],
         title: '《玻璃罐里的雨季》',
-        views: 5213
+        views: 5213,
+        status: 1,
+        category_id: 1,
+        likes: 0,
+        comment_count: 0,
+        favorite_count: 0,
+        update_date: '2024-06-09 22:15:20'
       },
       {
         author: '匿名用户',
-        category_name: '\u52A8\u6F2B\u5C0F\u8BF4',
+        category_name: '动漫小说',
         content: '',
         description: '戴斌和赵文伟两家是世交，到了他们这代，关系不但没淡化，反而走得更近了',
         id: 22,
@@ -375,11 +397,17 @@ const loadHomeData = async () => {
           {
             color: '#ff4141',
             id: 7,
-            name: '\u70ED\u95E8\u63A8\u8350'
+            name: '热门推荐'
           }
         ],
         title: '《寻宝闹剧》',
-        views: 5213
+        views: 5213,
+        status: 1,
+        category_id: 1,
+        likes: 0,
+        comment_count: 0,
+        favorite_count: 0,
+        update_date: '2024-06-05 22:15:20'
       }
     ]
     // 演示时使用截止-----
