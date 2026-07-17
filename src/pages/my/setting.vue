@@ -65,6 +65,7 @@
 <script lang="ts" setup>
 // import { useToast } from 'wot-design-uni'
 import { toast } from 'sard-uniapp'
+import { showAppModal } from '@/components/AppModal'
 import { useTokenStore } from '@/store/token'
 
 // 定义页面配置
@@ -107,7 +108,7 @@ const checkUpdate = () => {
 
 // 退出登录
 const confirmLogout = () => {
-  uni.showModal({
+  showAppModal({
     title: '确认退出',
     content: '确定要退出登录吗？',
     success: (res) => {

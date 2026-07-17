@@ -110,6 +110,7 @@
 import type { FavoriteItem } from '@/api/favorite'
 import { onMounted, reactive, ref } from 'vue'
 import { FavoriteType, getFavoriteList, getFavoriteStats, toggleFavorite } from '@/api/favorite'
+import { showAppModal } from '@/components/AppModal'
 
 definePage({
   style: {
@@ -263,7 +264,7 @@ const loadMore = () => {
 // 取消收藏
 const removeFavoriteItem = async (item: FavoriteItem) => {
   try {
-    uni.showModal({
+    showAppModal({
       title: '提示',
       content: '确定要取消收藏吗？',
       success: async (res) => {

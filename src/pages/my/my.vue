@@ -102,6 +102,7 @@ import { storeToRefs } from 'pinia'
 import { cropImage } from 'sard-uniapp'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { getFavoriteStats } from '@/api/favorite'
+import { showAppModal } from '@/components/AppModal'
 import AvatarUpload from '@/components/CustomPreview.vue' // 确保路径正确
 
 import { LOGIN_PAGE } from '@/router/config'
@@ -153,7 +154,7 @@ const onCoverError = () => {
 // 更换封面：选择图片并上传到后端
 const changeBgCover = () => {
   if (!hasLogin.value) {
-    uni.showModal({
+    showAppModal({
       title: '提示',
       content: '请先登录后再更换封面',
       confirmText: '去登录',
@@ -309,7 +310,7 @@ const checkLoginAndExecute = (callback) => {
     callback()
   }
   else {
-    uni.showModal({
+    showAppModal({
       title: '提示',
       content: '该功能需要登录后才能使用，是否前往登录？',
       success: (res) => {
@@ -419,7 +420,7 @@ const handleMenuClick = (item: { url?: string, name: string, action?: any }) => 
 
 // 退出登录
 const logout = () => {
-  uni.showModal({
+  showAppModal({
     title: '确认退出',
     content: '确定要退出登录吗？',
     success: (res) => {

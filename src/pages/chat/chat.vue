@@ -108,6 +108,7 @@ import { onPullDownRefresh, onShow } from '@dcloudio/uni-app'
 
 import { computed, onMounted } from 'vue'
 import { deleteRoom, hideRoom, markRoomAsRead } from '@/api/chat'
+import { showAppModal } from '@/components/AppModal'
 import { useChatStore } from '@/store/chat'
 import { DEFAULT_AVATARS } from './config'
 
@@ -311,7 +312,7 @@ const handleSwipeAction = async (event: any, room: ChatRoom) => {
     }
     else if (event.index === 1) {
       // 隐藏会话
-      uni.showModal({
+      showAppModal({
         title: '确认隐藏',
         content: '隐藏后可在设置中恢复',
         success: async (res) => {
@@ -334,7 +335,7 @@ const handleSwipeAction = async (event: any, room: ChatRoom) => {
     }
     else if (event.index === 2) {
       // 删除会话
-      uni.showModal({
+      showAppModal({
         title: '确认删除',
         content: '删除后将清空所有聊天记录，且无法恢复',
         success: async (res) => {

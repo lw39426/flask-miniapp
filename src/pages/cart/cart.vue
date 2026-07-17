@@ -137,6 +137,7 @@ import {
   getCartItems,
   updateCartItem,
 } from '@/api/cart'
+import { showAppModal } from '@/components/AppModal'
 import { useTokenStore } from '@/store/token'
 import CartSkeleton from './components/CartSkeleton.vue'
 
@@ -353,7 +354,7 @@ const handleSwipeClick = (event: any, index?: number) => {
 const removeItem = async (index: number) => {
   const item = cartItems.value[index]
 
-  uni.showModal({
+  showAppModal({
     title: '提示',
     content: '确定要删除该商品吗？',
     success: async (res) => {
@@ -456,7 +457,7 @@ const clearAllItems = () => {
     return
   }
 
-  uni.showModal({
+  showAppModal({
     title: '提示',
     content: '确定要清空购物车吗？',
     success: async (res) => {

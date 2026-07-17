@@ -126,6 +126,7 @@ import { computed, onMounted, ref } from 'vue'
 import { addToCart as addToCartAPI } from '@/api/cart'
 import { getProductDetail } from '@/api/category'
 import { checkFavorite, FavoriteType, toggleFavorite as toggleFavoriteApi } from '@/api/favorite'
+import { showAppModal } from '@/components/AppModal'
 import CommentSystem from '@/components/CommentSystem.vue'
 import { useNavbar } from '@/hooks/useNavbar'
 import { useTokenStore } from '@/store/token'
@@ -273,7 +274,7 @@ const addToCart = async () => {
 
   // 检查登录状态
   if (!tokenStore.hasLogin) {
-    uni.showModal({
+    showAppModal({
       title: '提示',
       content: '请先登录后再添加到购物车',
       confirmText: '去登录',
@@ -378,7 +379,7 @@ const buyNow = async () => {
 
   // 检查登录状态
   if (!tokenStore.hasLogin) {
-    uni.showModal({
+    showAppModal({
       title: '提示',
       content: '请先登录后再购买',
       confirmText: '去登录',
@@ -473,7 +474,7 @@ const toggleFavorite = async () => {
 
   // 检查登录状态
   if (!tokenStore.hasLogin) {
-    uni.showModal({
+    showAppModal({
       title: '提示',
       content: '请先登录后再收藏商品',
       confirmText: '去登录',

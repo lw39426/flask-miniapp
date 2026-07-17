@@ -253,6 +253,7 @@ import { onHide, onLoad, onShow } from '@dcloudio/uni-app'
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 
 import { getMessages, markRoomAsRead, sendMessage as sendMessageApi } from '@/api/chat'
+import { showAppModal } from '@/components/AppModal'
 import { useNavbar } from '@/hooks/useNavbar'
 import { PAGINATION } from '@/pages/chat/config'
 import { useChatStore } from '@/store/chat'
@@ -983,7 +984,7 @@ const copyMessage = (message: Message) => {
  * 删除消息
  */
 const deleteMessage = (message: Message) => {
-  uni.showModal({
+  showAppModal({
     title: '提示',
     content: '确定要删除这条消息吗？',
     success: (res) => {

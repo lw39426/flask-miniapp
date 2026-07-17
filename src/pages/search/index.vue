@@ -121,6 +121,7 @@
 import type { Product } from '@/api/category'
 import { computed, ref } from 'vue'
 import { searchProducts } from '@/api/category'
+import { showAppModal } from '@/components/AppModal'
 import NavBarSearch from '@/components/NavBarSearch.vue'
 
 definePage({
@@ -280,7 +281,7 @@ const selectHotKeyword = (item: string) => {
 
 // 清空搜索历史
 const clearHistory = () => {
-  uni.showModal({
+  showAppModal({
     title: '提示',
     content: '确定要清空搜索历史吗？',
     success: (res) => {

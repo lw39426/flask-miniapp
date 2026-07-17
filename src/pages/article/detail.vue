@@ -106,6 +106,7 @@ import { onLoad, onShow } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 import { getArticleDetail } from '@/api/article'
 import { checkFavorite, FavoriteType, toggleFavorite as toggleFavoriteApi } from '@/api/favorite'
+import { showAppModal } from '@/components/AppModal'
 import CommentSystem from '@/components/CommentSystem.vue'
 import { useNavbar } from '@/hooks/useNavbar'
 import { mockArticleDetail } from '@/mock/article'
@@ -361,7 +362,7 @@ const toggleFavorite = async () => {
 
   // 检查登录状态
   if (!tokenStore.hasLogin) {
-    uni.showModal({
+    showAppModal({
       title: '提示',
       content: '请先登录后再收藏文章',
       confirmText: '去登录',

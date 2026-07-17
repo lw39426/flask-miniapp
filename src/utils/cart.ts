@@ -4,6 +4,7 @@
  */
 
 import { addToCart } from '@/api/cart'
+import { showAppModal } from '@/components/AppModal'
 import { useTokenStore } from '@/store/token'
 
 /**
@@ -28,7 +29,7 @@ export const addProductToCart = async (
     // 检查登录状态
     if (!tokenStore.hasLogin) {
       console.log('用户未登录')
-      uni.showModal({
+      showAppModal({
         title: '提示',
         content: '请先登录后再添加到购物车',
         confirmText: '去登录',
@@ -110,7 +111,7 @@ export const quickAddToCart = (
   productName: string,
   quantity: number = 1
 ) => {
-  uni.showModal({
+  showAppModal({
     title: '添加到购物车',
     content: `确定将"${productName}"添加到购物车吗？`,
     confirmText: '确定',
@@ -137,7 +138,7 @@ export const buyNow = async (
 
     // 检查登录状态
     if (!tokenStore.hasLogin) {
-      uni.showModal({
+      showAppModal({
         title: '提示',
         content: '请先登录后再购买',
         confirmText: '去登录',

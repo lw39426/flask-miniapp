@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onHide, onLaunch, onShow } from '@dcloudio/uni-app'
 
+import AppModalAgent from '@/components/AppModalAgent.vue'
 import { navigateToInterceptor } from '@/router/interceptor'
 import { useChatStore } from '@/store/chat'
 import { useTokenStore } from '@/store/token'
@@ -86,6 +87,10 @@ onHide(() => {
   // 不断开连接，保持后台接收消息
 })
 </script>
+
+<template>
+  <AppModalAgent />
+</template>
 
 <style lang="scss">
 @import 'sard-uniapp/index.scss';

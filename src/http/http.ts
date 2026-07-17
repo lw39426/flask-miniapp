@@ -1,6 +1,7 @@
 import type { IDoubleTokenRes } from '@/api/types/login'
 import type { CustomRequestOptions, IResponse } from '@/http/types'
 import { nextTick } from 'vue'
+import { showAppModal } from '@/components/AppModal'
 import { LOGIN_PAGE } from '@/router/config'
 import { useTokenStore } from '@/store/token'
 import { isDoubleTokenMode } from '@/utils'
@@ -63,7 +64,7 @@ export function http<T>(options: CustomRequestOptions) {
             // 未启用双token策略，显示确认框询问用户是否前往登录
             if (!isShowingLoginModal) {
               isShowingLoginModal = true
-              uni.showModal({
+              showAppModal({
                 title: '登录提示',
                 content: '您还未登录或登录已过期，无法进行此操作。是否前往登录页面？',
                 confirmText: '去登录',
@@ -93,7 +94,7 @@ export function http<T>(options: CustomRequestOptions) {
             // 没有refreshToken，显示确认框询问用户是否前往登录
             if (!isShowingLoginModal) {
               isShowingLoginModal = true
-              uni.showModal({
+              showAppModal({
                 title: '登录提示',
                 content: '您的登录已过期，无法进行此操作。是否前往登录页面？',
                 confirmText: '去登录',
@@ -150,7 +151,7 @@ export function http<T>(options: CustomRequestOptions) {
                 nextTick(() => {
                   // 关闭其他弹窗
                   uni.hideToast()
-                  uni.showModal({
+                  showAppModal({
                     title: '登录提示',
                     content: '登录状态刷新失败，您的登录已过期。是否前往登录页面？',
                     confirmText: '去登录',

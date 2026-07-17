@@ -96,6 +96,7 @@
 import type { Comment, CommentListResponse, CommentStatistics } from '@/api/comment'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { commentAPI } from '@/api/comment'
+import { showAppModal } from '@/components/AppModal'
 import { useNavbar } from '@/hooks/useNavbar'
 import { mockComments, mockPagination } from '@/mock/comment'
 import { useTokenStore } from '@/store/token'
@@ -258,7 +259,7 @@ const submitComment = async () => {
   }
 
   if (!props.currentUser) {
-    uni.showModal({
+    showAppModal({
       title: '提示',
       content: '您需要先登录才能回复评论',
       confirmText: '去登录',
@@ -316,7 +317,7 @@ const submitComment = async () => {
 const handleReply = (comment: Comment) => {
   // 未登录先去登录
   if (!props.currentUser) {
-    uni.showModal({
+    showAppModal({
       title: '提示',
       content: '您需要先登录才能回复评论',
       confirmText: '去登录',
@@ -434,7 +435,7 @@ const handleDelete = async (comment: Comment) => {
   }
 
   try {
-    const resDelete = await uni.showModal({
+    const resDelete = await showAppModal({
       title: '确认删除',
       content: '确定要删除这条评论吗？',
       confirmText: '删除',
