@@ -13,7 +13,7 @@
           v-for="(category, index) in categories"
           :key="category.id || index"
           class="category-item" :class="[{ active: activeCategory === category.id }]"
-          @tap="handleCategorySwitch(category, index)"
+          @tap="handleCategorySwitch(category)"
         >
           <text>{{ category.name }}</text>
         </view>
@@ -94,7 +94,7 @@
 
 <script lang="ts" setup>
 import type { Product } from '@/api/home'
-import { nextTick, onMounted, ref, watch } from 'vue'
+import { nextTick, ref, watch } from 'vue'
 import { getCategoryProducts } from '@/api/home'
 
 // Props 定义
@@ -138,6 +138,8 @@ const loading = ref<boolean>(false)
 const imageLoadCount = ref<number>(0)
 const totalImages = ref<number>(0)
 const products = ref<ProductWithHeight[]>([])
+const hasInitialized = ref<boolean>(false)
+const latestRequestId = ref<number>(0)
 
 /** 优化的商品卡片高度估算方法 */
 const estimateItemHeight = (product: ProductWithHeight): number => {
@@ -293,20 +295,26 @@ const onImageError = (event: any) => {
 
 // 加载分类商品数据
 const loadCategoryProducts = async (categoryId: number) => {
+  const requestId = ++latestRequestId.value
   loading.value = true
 
   try {
-    // 这里应该调用真实的API
+    console.log('categoryId:', categoryId)
     const res = await getCategoryProducts(categoryId, { page: 1, pageSize: 6 })
-    console.log('获取分类商品成功:', res)
-    if (res.code !== 200) {
-      throw new Error('获取分类商品成功')
+    // 仅处理最后一次请求，避免快速切换分类时旧响应覆盖新数据
+    if (requestId !== latestRequestId.value) {
+      return
     }
+    console.log('获取分类商品成功:', res)
     // 没有缓存的image: `https://picsum.photos/300/${200 + Math.floor(Math.random() * 200)}?random=${categoryId * 100 + index}`,
     products.value = (res?.data?.products || [])
     layoutWaterfall(products.value)
   }
   catch (e: any) {
+    // 已过期请求不再触发错误提示或覆盖当前展示数据
+    if (requestId !== latestRequestId.value) {
+      return
+    }
     console.error(e)
     uni.showToast({ title: e?.message || '加载分类商品失败', icon: 'none' })
     waterfallColumns.value = [[], []]
@@ -317,8 +325,8 @@ const loadCategoryProducts = async (categoryId: number) => {
     const mockProducts: ProductWithHeight[] = Array.from({ length: 6 }, (_, index) => ({
       id: 0 + index,
       code: `SKU${index}`,
-      description: '',
       name: `${currentCategoryName.value}商品 ${index + 1} - ${['精选', '热销', '新品', '限时', '特价', '推荐'][index] || '优质'}`,
+      description: '',
       price: Math.floor(Math.random() * 200) + 50,
       sale_price: Math.floor(Math.random() * 150) + 30,
       image: `https://picsum.photos/300/${200 + Math.floor(Math.random() * 200)}`,
@@ -342,12 +350,14 @@ const loadCategoryProducts = async (categoryId: number) => {
     // 加载失败时，演示使用----
   }
   finally {
-    loading.value = false
+    if (requestId === latestRequestId.value) {
+      loading.value = false
+    }
   }
 }
 
 // 分类切换处理
-const handleCategorySwitch = (category: CategoryItem, index: number) => {
+const handleCategorySwitch = (category: CategoryItem) => {
   if (activeCategory.value === category.id)
     return // 避免重复切换
 
@@ -367,42 +377,46 @@ const handleViewMore = () => {
   emit('viewMore', activeCategory.value)
 }
 
-// 监听分类变化
-watch(() => props.categories, (newCategories) => {
-  if (newCategories && newCategories.length > 0 && !activeCategory.value) {
-    const firstCategory = newCategories[0]
-    activeCategory.value = firstCategory.id
-    currentCategoryName.value = firstCategory.name
-    loadCategoryProducts(firstCategory.id)
-  }
-  else {
-    // 演示时使用
-    loadCategoryProducts(1)
-  }
-}, { immediate: true })
-
-// 监听默认分类ID变化
-watch(() => props.defaultCategoryId, (newId) => {
-  if (newId && newId !== activeCategory.value) {
-    const category = props.categories.find(c => c.id === newId)
-    if (category) {
-      handleCategorySwitch(category, 0)
+/**
+ * @description 根据分类列表同步激活分类并触发加载（组件唯一初始化入口）
+ * @param {CategoryItem[]} newCategories 最新分类列表
+ */
+const syncCategoryByCategories = (newCategories: CategoryItem[]) => {
+  if (!newCategories.length) {
+    if (!hasInitialized.value) {
+      hasInitialized.value = true
+      // 演示时mock使用
+      loadCategoryProducts(1)
     }
+    return
   }
-})
 
-// 组件挂载时初始化
-onMounted(() => {
-  if (props.categories.length > 0) {
-    const defaultCategory = props.defaultCategoryId
-      ? props.categories.find(c => c.id === props.defaultCategoryId)
-      : props.categories[0]
+  const matchedCategory = activeCategory.value
+    ? newCategories.find(c => c.id === activeCategory.value)
+    : undefined
 
-    if (defaultCategory) {
-      handleCategorySwitch(defaultCategory, 0)
-    }
+  // 已有激活分类且仍存在时，不重复请求，只同步名称
+  if (matchedCategory) {
+    currentCategoryName.value = matchedCategory.name
+    return
   }
-})
+
+  const firstCategory = newCategories[0]
+  activeCategory.value = firstCategory.id
+  currentCategoryName.value = firstCategory.name
+  hasInitialized.value = true
+  loadCategoryProducts(firstCategory.id)
+}
+
+// 监听分类变化：统一由该入口进行初始化和同步，避免重复触发
+watch(
+  () => props.categories,
+  (newCategories, oldCategories) => {
+    console.log('分类变化:', oldCategories, newCategories, activeCategory.value)
+    syncCategoryByCategories(newCategories || [])
+  },
+  { immediate: true },
+)
 </script>
 
 <style scoped>
