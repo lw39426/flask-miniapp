@@ -4,7 +4,7 @@
     <view class="search-box" :class="{ 'has-back': showBack }" :style="boxStyle" @tap="onClick">
       <!-- 返回按钮 -->
       <view v-if="showBack" class="back-icon-wrapper" @tap.stop="onBack">
-        <text class="back-icon">←</text>
+        <text class="i-carbon:arrow-left back-icon" />
       </view>
 
       <!-- 搜索图标 (仅非输入模式或输入模式但显示图标时) -->

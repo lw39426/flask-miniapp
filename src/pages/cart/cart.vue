@@ -14,7 +14,7 @@
       <template #empty>
         <!-- 未登录状态 -->
         <view v-if="!hasLogin" class="empty-cart">
-          <text class="empty-icon">🔒</text>
+          <text class="i-carbon:user-access-locked empty-icon" />
           <text class="empty-text">您还未登录</text>
           <text class="empty-desc">登录后查看购物车内容</text>
           <view class="login-btn" @tap="goToLogin">
@@ -734,7 +734,7 @@ onUnmounted(() => {
 
   .login-btn,
   .go-shop-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #fc7373;
     color: #ffffff;
     padding: 24rpx 80rpx;
     border-radius: 50rpx;

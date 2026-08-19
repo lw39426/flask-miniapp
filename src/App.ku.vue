@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import AppModalAgent from '@/components/AppModalAgent.vue'
 import { useThemeStore } from '@/store'
 import FgTabbar from '@/tabbar/index.vue'
 import { isPageTabbar } from './tabbar/store'
@@ -40,6 +41,7 @@ defineExpose({
   <KuRootView />
   <FgTabbar v-if="isCurrentPageTabbar" />
 
+  <AppModalAgent />
   <sar-toast-agent />
 <!--
     <sar-toast />

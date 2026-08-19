@@ -25,8 +25,8 @@
 
     <!-- 商品列表 -->
     <scroll-view class="product-scroll" :scroll-y="true" @scrolltolower="loadMore">
-      <!-- 骨架屏 -->
-      <view v-if="loading && products.length === 0" class="product-grid">
+      <!-- 骨架屏：仅首次加载时显示 -->
+      <view v-if="isFirstLoad && loading && products.length === 0" class="product-grid">
         <view v-for="i in 6" :key="i" class="product-item">
           <ProductCardSkeleton image-height="300rpx" />
         </view>
@@ -91,6 +91,7 @@ const categoryId = ref<number>()
 const categoryName = ref('')
 const sortBy = ref<'create_time' | 'price' | 'sales'>('create_time')
 const sortOrder = ref<'asc' | 'desc'>('desc')
+const isFirstLoad = ref(true) // 是否首次加载
 
 // 获取页面参数
 const getPageParams = () => {
@@ -113,16 +114,22 @@ const loadProducts = async (isRefresh = false) => {
 
     if (isRefresh) {
       page.value = 1
-      products.value = []
+      // 首次加载时清空列表（让骨架屏能显示），切换排序时保留旧数据避免闪烁
+      if (isFirstLoad.value) {
+        products.value = []
+      }
       hasMore.value = true
     }
 
-    let data
-    // 根据分类Id判断，根据分类Id还是关键字搜索请求数据
+    // 请求数据，统一提取为 items + totalPages
+    let items: Product[] = []
+    let totalPages = 1
+
     if (categoryId.value) {
       const res = await getCategoryProducts(categoryId.value, { page: page.value, pageSize: 10 })
-      data = res.data.products || []
-      categoryName.value = res.data.category_name
+      items = res.data?.products || []
+      totalPages = res.data?.pagination?.pages || 1
+      categoryName.value = res.data?.category_name || ''
     }
     else {
       const res = await searchProducts({
@@ -131,17 +138,19 @@ const loadProducts = async (isRefresh = false) => {
         sort_by: sortBy.value,
         sort_order: sortOrder.value
       })
-      data = res.data
+      items = res.data?.products || []
+      totalPages = res.data?.pagination?.pages || 1
     }
 
+    // 更新商品列表
     if (isRefresh) {
-      products.value = data.data || data.products || []
+      products.value = items
     }
     else {
-      products.value.push(...(data.data || data.products || []))
+      products.value.push(...items)
     }
 
-    hasMore.value = page.value < (data.pages || 1)
+    hasMore.value = page.value < totalPages
   }
   catch (error) {
     console.error('加载商品失败:', error)
@@ -152,6 +161,7 @@ const loadProducts = async (isRefresh = false) => {
   }
   finally {
     loading.value = false
+    isFirstLoad.value = false
   }
 }
 

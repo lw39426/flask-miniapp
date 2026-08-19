@@ -169,7 +169,7 @@ const onBannerTap = (banner: Banner) => {
   }
 }
 const onNavTap = (nav: { url: string }) => uni.navigateTo({ url: nav.url })
-const goToMore = () => uni.navigateTo({ url: '/pages/product/list?type=recommend' })
+const goToMore = () => showAppModal({ title: '提示', content: '更多功能正在开发中，敬请期待！' })
 const goAlert = (msg: string) => showAppModal({ title: '傻逼一个嘻嘻嘻', content: msg })
 /** 跳转至商品详情 */
 const goToProductDetail = (product: { code: string }) => uni.navigateTo({ url: `/pages/product/detail?code=${product.code}` })
@@ -429,7 +429,7 @@ onShow(() => {
 
 <style scoped>
 .home-page {
-  background-color: #f8f6f0;
+  background-color: #f5f5f4;
   min-height: 100vh;
 }
 
