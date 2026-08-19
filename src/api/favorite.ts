@@ -42,6 +42,8 @@ export interface FavoriteItem {
     sales?: number
     brand?: string
     category_name?: string
+    article_code?: string
+    code?: string
   }
 }
 

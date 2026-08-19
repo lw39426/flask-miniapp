@@ -1,7 +1,7 @@
 <template>
   <view class="favorite-page">
     <!-- 导航栏 -->
-    <view class="nav-bar">
+    <view class="nav-bar" :style="{ paddingTop: `${statusBarHeight}px` }">
       <view class="nav-back" @tap="goBack">
         <text class="back-icon i-carbon-arrow-left" />
       </view>
@@ -40,23 +40,22 @@
         </view>
 
         <view
-          v-for="(item, index) in articleList"
-          :key="item.id + index"
-          class="article-item"
+          v-for="item in articleList"
+          :key="item.id"
+          class="favorite-item article-card"
           @tap="goToArticle(item)"
         >
-          <image class="article-image" :src="item.item_detail?.image || item.item_image" mode="aspectFill" />
-          <view class="article-content">
-            <text class="article-title">{{ item.item_detail?.title || item.item_title }}</text>
-            <view class="article-meta">
-              <text class="article-author">{{ item.item_detail?.author?.nickname || '匿名' }}</text>
-              <text class="article-date">{{ formatDate(item.created_at) }}</text>
+          <image class="favorite-image" :src="item.item_detail?.image || item.item_image" mode="aspectFill" />
+          <view class="favorite-content">
+            <text class="favorite-title">{{ item.item_detail?.title || item.item_title }}</text>
+            <text v-if="item.item_description" class="favorite-desc">{{ item.item_description }}</text>
+            <view class="favorite-meta">
+              <text class="meta-author">{{ item.item_detail?.author?.nickname || '匿名' }}</text>
+              <text class="meta-views">{{ item.item_detail?.views || 0 }}人阅读</text>
             </view>
-            <view class="article-stats">
-              <text class="stats-item">{{ item.item_detail?.views || 0 }}人阅读</text>
-            </view>
+            <text class="favorite-time">{{ formatRelativeTime(item.created_at) }}</text>
           </view>
-          <view class="article-action" @tap.stop="removeFavoriteItem(item)">
+          <view class="favorite-action" @tap.stop="removeFavoriteItem(item)">
             <text class="action-icon">🗑️</text>
           </view>
         </view>
@@ -71,24 +70,25 @@
         </view>
 
         <view
-          v-for="(item, index) in productList"
-          :key="item.id + index"
-          class="article-item"
+          v-for="item in productList"
+          :key="item.id"
+          class="favorite-item product-card"
           @tap="goToProduct(item)"
         >
-          <image class="article-image" :src="item.item_detail?.main_image || item.item_image" mode="aspectFill" />
-          <view class="article-content">
-            <text class="article-title">{{ item.item_detail?.name || item.item_title }}</text>
-            <view class="article-meta">
-              <text class="product-price-text">¥{{ formatPrice(item.item_detail?.price || item.item_detail?.sale_price) }}</text>
-              <text class="article-date">{{ formatDate(item.created_at) }}</text>
+          <image class="favorite-image" :src="item.item_detail?.main_image || item.item_image" mode="aspectFill" />
+          <view class="favorite-content">
+            <text class="favorite-title">{{ item.item_detail?.name || item.item_title }}</text>
+            <view class="favorite-meta">
+              <text class="product-price">¥{{ formatPrice(item.item_detail?.price || item.item_detail?.sale_price) }}</text>
+              <text class="meta-sales">已售 {{ item.item_detail?.sales || 0 }}</text>
             </view>
-            <view class="article-stats">
-              <text class="stats-item">{{ item.item_detail?.sales || 0 }}人购买</text>
-              <text v-if="item.item_detail?.stock" class="stats-item">库存: {{ item.item_detail.stock }}</text>
+            <view v-if="item.item_detail?.brand || item.item_detail?.category_name" class="product-tags">
+              <text v-if="item.item_detail?.brand" class="tag">{{ item.item_detail.brand }}</text>
+              <text v-if="item.item_detail?.category_name" class="tag">{{ item.item_detail.category_name }}</text>
             </view>
+            <text class="favorite-time">{{ formatRelativeTime(item.created_at) }}</text>
           </view>
-          <view class="article-action" @tap.stop="removeFavoriteItem(item)">
+          <view class="favorite-action" @tap.stop="removeFavoriteItem(item)">
             <text class="action-icon">🗑️</text>
           </view>
         </view>
@@ -111,6 +111,7 @@ import type { FavoriteItem } from '@/api/favorite'
 import { onMounted, reactive, ref } from 'vue'
 import { FavoriteType, getFavoriteList, getFavoriteStats, toggleFavorite } from '@/api/favorite'
 import { showAppModal } from '@/components/AppModal'
+import { formatRelativeTime } from '@/utils'
 
 definePage({
   style: {
@@ -125,6 +126,7 @@ const loading = ref(false)
 const hasMore = ref(true)
 const page = ref(1)
 const limit = 10
+const statusBarHeight = ref(0)
 
 // 列表数据
 const articleList = ref<FavoriteItem[]>([])
@@ -136,28 +138,6 @@ const stats = reactive({
   article: 0,
   product: 0
 })
-
-// 格式化日期
-const formatDate = (dateString: string) => {
-  if (!dateString)
-    return ''
-  const date = new Date(dateString)
-  const now = new Date()
-  const diff = now.getTime() - date.getTime()
-
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-  if (days === 0)
-    return '今天收藏'
-  if (days === 1)
-    return '昨天收藏'
-  if (days < 7)
-    return `${days}天前收藏`
-
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day} 收藏`
-}
 
 // 格式化价格（分转元）
 const formatPrice = (priceInCents?: number) => {
@@ -177,14 +157,10 @@ const switchTab = (tab: 'article' | 'product') => {
     return
 
   activeTab.value = tab
-  page.value = 1
-  hasMore.value = true
-
-  if (tab === 'article' && articleList.value.length === 0) {
-    // eslint-disable-next-line ts/no-use-before-define
-    loadFavoriteList()
-  }
-  else if (tab === 'product' && productList.value.length === 0) {
+  // 两个列表已同时填充，仅当都为空时才重新加载
+  if (articleList.value.length === 0 && productList.value.length === 0) {
+    page.value = 1
+    hasMore.value = true
     // eslint-disable-next-line ts/no-use-before-define
     loadFavoriteList()
   }
@@ -204,28 +180,23 @@ const loadFavoriteList = async (isRefresh = false) => {
     }
 
     const res = await getFavoriteList({
-      type: activeTab.value === 'article' ? FavoriteType.ARTICLE : FavoriteType.PRODUCT,
       page: page.value,
       per_page: limit
     })
 
     const newItems = res.data.favorites
 
-    if (activeTab.value === 'article') {
-      if (isRefresh) {
-        articleList.value = newItems
-      }
-      else {
-        articleList.value.push(...newItems)
-      }
+    // 按 item_type 分类，而非按当前 tab
+    const articles = newItems.filter(i => i.item_type === 'article')
+    const products = newItems.filter(i => i.item_type === 'product')
+
+    if (isRefresh) {
+      articleList.value = articles
+      productList.value = products
     }
     else {
-      if (isRefresh) {
-        productList.value = newItems
-      }
-      else {
-        productList.value.push(...newItems)
-      }
+      articleList.value.push(...articles)
+      productList.value.push(...products)
     }
 
     hasMore.value = res.data.pagination.has_next
@@ -309,22 +280,28 @@ const removeFavoriteItem = async (item: FavoriteItem) => {
   }
 }
 
-// 跳转到文章详情
+// 跳转到文章详情（优先使用 item_detail 中的 article_code）
 const goToArticle = (item: FavoriteItem) => {
+  const code = item.item_detail?.article_code || String(item.item_id)
   uni.navigateTo({
-    url: `/pages/article/detail?id=${item.item_id}`
+    url: `/pages/article/detail?article_code=${code}`
   })
 }
 
-// 跳转到商品详情
+// 跳转到商品详情（优先使用 item_detail 中的 code）
 const goToProduct = (item: FavoriteItem) => {
+  const code = item.item_detail?.code || String(item.item_id)
   uni.navigateTo({
-    url: `/pages/product/detail?id=${item.item_id}`
+    url: `/pages/product/detail?code=${code}`
   })
 }
 
 // 页面加载
 onMounted(() => {
+  // 获取状态栏高度
+  const sysInfo = uni.getSystemInfoSync()
+  statusBarHeight.value = sysInfo.statusBarHeight || 0
+
   loadStats()
   loadFavoriteList(true)
 })
@@ -344,8 +321,7 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   height: 88rpx;
-  padding: var(--status-bar-height) 20rpx 0;
-  /* padding: 20rpx 32rpx; */
+  padding: 0 20rpx;
   background: #ffffff;
   box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
 }
@@ -448,12 +424,13 @@ onMounted(() => {
   color: #999999;
 }
 
-/* 文章列表 */
-.article-list {
+/* 收藏列表通用 */
+.article-list,
+.product-list {
   padding: 0 20rpx;
 }
 
-.article-item {
+.favorite-item {
   display: flex;
   background: #ffffff;
   border-radius: 16rpx;
@@ -462,21 +439,22 @@ onMounted(() => {
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
 }
 
-.article-image {
+.favorite-image {
   width: 160rpx;
-  height: 120rpx;
+  height: 160rpx;
   border-radius: 12rpx;
   margin-right: 20rpx;
+  flex-shrink: 0;
 }
 
-.article-content {
+.favorite-content {
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  min-width: 0;
 }
 
-.article-title {
+.favorite-title {
   font-size: 28rpx;
   font-weight: 500;
   color: #2c2c2c;
@@ -486,42 +464,44 @@ onMounted(() => {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
-  margin-bottom: 16rpx;
+  margin-bottom: 8rpx;
 }
 
-.article-meta {
-  display: flex;
-  align-items: center;
-  margin-bottom: 12rpx;
-}
-
-.article-author {
+.favorite-desc {
   font-size: 24rpx;
-  color: #666666;
-  margin-right: 20rpx;
+  color: #999;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 8rpx;
 }
 
-.article-date {
-  font-size: 22rpx;
-  color: #999999;
-}
-
-.article-stats {
+.favorite-meta {
   display: flex;
   align-items: center;
+  gap: 16rpx;
+  margin-bottom: 8rpx;
 }
 
-.stats-item {
+.meta-author,
+.meta-views,
+.meta-sales {
   font-size: 22rpx;
   color: #999999;
-  margin-right: 20rpx;
 }
 
-.article-action {
+.favorite-time {
+  font-size: 22rpx;
+  color: #bbb;
+  margin-top: auto;
+}
+
+.favorite-action {
   width: 60rpx;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .action-icon {
@@ -529,16 +509,34 @@ onMounted(() => {
   opacity: 0.6;
 }
 
-/* 商品列表 - 使用与文章相同的样式 */
-.product-list {
-  padding: 0 20rpx;
+/* 文章卡片 */
+.article-card {
+  border-left: 4rpx solid #1890ff;
 }
 
-/* 商品价格特殊样式 */
-.product-price-text {
-  font-size: 26rpx;
+/* 商品卡片 */
+.product-card {
+  border-left: 4rpx solid #e74c3c;
+}
+
+.product-price {
+  font-size: 28rpx;
   color: #e74c3c;
   font-weight: 600;
+}
+
+.product-tags {
+  display: flex;
+  gap: 8rpx;
+  margin-top: 8rpx;
+}
+
+.tag {
+  font-size: 20rpx;
+  color: #666;
+  background: #f5f5f5;
+  padding: 2rpx 12rpx;
+  border-radius: 8rpx;
 }
 
 /* 加载状态 */
