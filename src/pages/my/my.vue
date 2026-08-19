@@ -2,7 +2,7 @@
   <view class="profile-page">
     <!-- 顶部背景封面图 -->
     <view class="top-show">
-      <image mode="widthFix" class="top-show-img" :src="coverSrc" @tap="changeBgCover" @error="onCoverError" />
+      <image mode="widthFix" class="top-show-img" :src="coverSrc" @tap="previewCover" @error="onCoverError" />
       <view v-if="hasLogin" class="cover-edit-btn" @tap="changeBgCover">
         更换封面
       </view>
@@ -14,6 +14,7 @@
         <view class="avatar">
           <AvatarUpload
             :default-avatar="displayAvatar"
+            :has-login="hasLogin"
             @image-selected="handleNewImage"
           />
         </view>
@@ -159,6 +160,19 @@ const onCoverError = () => {
  */
 const resetCoverState = () => {
   coverUrl.value = ''
+}
+
+// 预览查看封面图
+const previewCover = () => {
+  const url = coverSrc.value
+  if (!url) {
+    return
+  }
+  uni.previewImage({
+    urls: [url],
+    current: url,
+    showmenu: true,
+  })
 }
 
 // 更换封面：选择图片并上传到后端
@@ -643,8 +657,8 @@ onUnmounted(() => {
   padding: 0rpx !important;
   background-color: #f5f5f4;
   // background-color: #ffffff;
-  min-height: 90vh;
-  overflow: scroll;
+  height: calc(100vh - 50px);
+  overflow: hidden;
 }
 
 /* 顶部展示图片 */
@@ -652,7 +666,7 @@ onUnmounted(() => {
   // background: linear-gradient(164deg, #a7ffec 0%, #ff558a 100%);
   background: #949191;
   width: 100%;
-  height: 340rpx !important;
+  height: 400rpx !important;
   overflow: hidden;
   position: relative;
 }

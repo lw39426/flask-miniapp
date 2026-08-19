@@ -1,6 +1,6 @@
 <template>
   <!-- 1. 头像显示区域 -->
-  <image class="avatar" :src="avatarUrl" mode="aspectFill" @click="openCustomPreview" />
+  <image class="avatar" :src="avatarUrl" mode="aspectFill" @click="previewAvatar" @longpress="onLongPressAvatar" />
 
   <!-- 2. 自定义图片预览/操作层 -->
   <view v-if="isPreviewing" class="custom-preview-wrapper">
@@ -40,9 +40,11 @@ import { useUserStore } from '@/store/user'
 // --- Props ---
 interface Props {
   defaultAvatar?: string
+  hasLogin?: boolean
 }
 const props = withDefaults(defineProps<Props>(), {
   defaultAvatar: '/static/images/default-avatar.svg',
+  hasLogin: false,
 })
 
 // --- Emits ---
@@ -63,6 +65,45 @@ watch(() => props.defaultAvatar, (newVal) => {
 }, { immediate: true })
 
 // --- Methods ---
+
+/**
+ * 点击头像：原生全屏预览（未登录不操作）
+ */
+const previewAvatar = () => {
+  if (!props.hasLogin)
+    return
+  const url = avatarUrl.value
+  if (!url) {
+    console.log('预览失败：头像 URL 为空')
+    return
+  }
+  console.log('预览头像 URL:', url)
+  uni.previewImage({
+    urls: [url],
+    current: url,
+    fail: (err) => {
+      console.error('预览头像失败:', err)
+      uni.showToast({ title: '预览失败，请检查头像地址', icon: 'none' })
+    },
+  })
+}
+
+/**
+ * 长按头像：弹出底部操作菜单（未登录不操作）
+ */
+const onLongPressAvatar = () => {
+  if (!props.hasLogin)
+    return
+  uni.showActionSheet({
+    itemList: ['更换头像'],
+    success: (res) => {
+      if (res.tapIndex === 0) {
+        // eslint-disable-next-line ts/no-use-before-define
+        handleChooseImage()
+      }
+    },
+  })
+}
 
 /**
  * 打开自定义预览弹窗
