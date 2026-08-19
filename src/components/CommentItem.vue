@@ -5,14 +5,11 @@
       <image class="user-avatar" :src="comment.user_avatar" mode="aspectFill" />
 
       <view class="comment-content">
-        <!-- 用户信息 -->
+        <!-- 用户信息行 -->
         <view class="user-info">
-          <view class="user-info-left">
-            <text class="user-nickname">{{ comment.user_nickname }}</text>
-            <text v-if="isMine" class="self-badge">(我)</text>
-            <text v-if="comment.is_author" class="author-badge">(作者)</text>
-          </view>
-          <view class="user-info-right" />
+          <text class="user-nickname">{{ comment.user_nickname }}</text>
+          <text v-if="isMine" class="badge self-badge">我</text>
+          <text v-if="comment.is_author" class="badge author-badge">作者</text>
         </view>
 
         <!-- 评论内容 -->
@@ -23,15 +20,13 @@
           <text class="comment-text">{{ comment.content }}</text>
         </view>
 
-        <!-- 操作按钮 -->
+        <!-- 操作栏：时间、回复、点赞、删除 -->
         <view class="comment-meta">
-          <text class="comment-time">{{ formatTime(comment.created_at) }}</text>
+          <text class="comment-time">{{ formatRelativeTime(comment.created_at) }}</text>
           <text class="comment-reply" @tap="handleReply">回复</text>
-          <!-- <text class="like-icon" :class="{ liked: comment.is_liked }">点赞❤️</text> -->
           <view class="like-inline">
-            <!-- 选项A：纯文本（默认启用） -->
             <text class="like-icon" :class="{ liked: comment.is_liked }" @tap="handleLike">
-              {{ comment.is_liked ? '已赞❤️' : '点赞🤍' }}{{ comment.like_count }}
+              {{ comment.is_liked ? '❤️' : '🤍' }}{{ comment.like_count || '' }}
             </text>
             <text v-if="canDelete" class="delete-link" @tap="handleDelete">删除</text>
           </view>
@@ -57,9 +52,11 @@
 <script lang="ts" setup>
 import type { Comment } from '@/api/comment'
 import { computed } from 'vue'
+import { formatRelativeTime } from '@/utils'
 import CommentItem from './CommentItem.vue'
 
 defineOptions({ name: 'CommentItem' })
+
 const props = defineProps<Props>()
 
 const emit = defineEmits<Emits>()
@@ -79,15 +76,8 @@ interface Emits {
   (e: 'delete', comment: Comment): void
 }
 
-// ❗️❗️❗️ 在这里添加这行关键的日志 ❗️❗️❗️
-console.log(
-  `[CommentItem] Rendering comment ID: ${props.comment.id}, `
-  + `Children count: ${props.comment.children?.length ?? 0}`,
-  props.comment // 打印完整的 comment 对象
-)
 // 计算属性
 const canDelete = computed(() => {
-  // console.log('信息项', props.comment)
   if (!props.currentUser)
     return false
   return props.currentUser.id === props.comment.user_id
@@ -97,66 +87,10 @@ const isMine = computed(() => {
   return !!props.currentUser && props.currentUser.id === props.comment.user_id
 })
 
-// 格式化时间
-const formatTime = (timeString: string) => {
-  // console.log('timeString', timeString)
-  let normalized = timeString.trim()
-  // iOS 兼容："yyyy-MM-dd HH:mm:ss" -> "yyyy/MM/dd HH:mm:ss"
-  if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}$/.test(normalized)) {
-    normalized = normalized?.replace(/-/g, '/')
-  }
-
-  let date = new Date(normalized)
-  // 兜底：尝试 ISO 格式 "yyyy-MM-ddTHH:mm:ss"
-  if (Number.isNaN(date.getTime())) {
-    const tIso = timeString.replace(' ', 'T')
-    date = new Date(tIso)
-  }
-  const now = new Date()
-  const time = new Date(date)
-  // console.log('time', time)
-  const diff = now.getTime() - time.getTime()
-
-  const minute = 60 * 1000
-  const hour = 60 * minute
-  const day = 24 * hour
-  const week = 7 * day
-  const month = 30 * day
-
-  if (diff < minute) {
-    return '刚刚'
-  }
-  else if (diff < hour) {
-    return `${Math.floor(diff / minute)}分钟前`
-  }
-  else if (diff < day) {
-    return `${Math.floor(diff / hour)}小时前`
-  }
-  else if (diff < week) {
-    return `${Math.floor(diff / day)}天前`
-  }
-  // else if (diff < month) {
-  //   return `${Math.floor(diff / week)}周前`
-  // }
-  else {
-    return timeString
-  }
-}
-
-// 处理点赞
-const handleLike = () => {
-  emit('like', props.comment)
-}
-
-// 处理回复
-const handleReply = () => {
-  emit('reply', props.comment)
-}
-
-// 处理删除
-const handleDelete = () => {
-  emit('delete', props.comment)
-}
+// 事件处理
+const handleLike = () => emit('like', props.comment)
+const handleReply = () => emit('reply', props.comment)
+const handleDelete = () => emit('delete', props.comment)
 </script>
 
 <style scoped>
@@ -164,20 +98,12 @@ const handleDelete = () => {
   margin-bottom: 24rpx;
 }
 
-.comment-item.level-1 {
-  border-left: none;
-}
-
-.comment-item.level-2 {
-  margin-left: 80rpx;
-  padding-left: 16rpx;
-  border-left: 2rpx solid #e6f7ff;
-}
-
+/* 子评论缩进 */
+.comment-item.level-2,
 .comment-item.level-3 {
   margin-left: 80rpx;
   padding-left: 16rpx;
-  border-left: 2rpx solid #f6ffed;
+  border-left: 2rpx solid #e6f7ff;
 }
 
 .comment-main {
@@ -196,55 +122,43 @@ const handleDelete = () => {
 .comment-content {
   flex: 1;
   min-width: 0;
-  margin-bottom: 16rpx;
 }
 
+/* 用户信息行 */
 .user-info {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 8rpx;
   margin-bottom: 8rpx;
-  flex-wrap: wrap;
-  gap: 12rpx;
 }
 
 .user-nickname {
   font-size: 26rpx;
   font-weight: 500;
-  color: #939393;
+  color: #555;
+}
+
+.badge {
+  padding: 2rpx 10rpx;
+  border-radius: 8rpx;
+  font-size: 20rpx;
+  font-weight: 500;
 }
 
 .author-badge {
   background: #1890ff;
   color: #ffffff;
-  padding: 4rpx 12rpx;
-  border-radius: 12rpx;
-  font-size: 20rpx;
-  font-weight: 500;
 }
 
 .self-badge {
   background: #f0f0f0;
   color: #666666;
-  padding: 2rpx 10rpx;
-  border-radius: 12rpx;
-  font-size: 20rpx;
-  font-weight: 500;
 }
 
-.comment-time {
-  width: 40%;
-  font-size: 22rpx;
-  color: #999999;
-}
-.comment-reply {
-  font-size: 22rpx;
-  color: #999999;
-}
-
+/* 评论内容 */
 .comment-body {
-  /* margin-bottom: 16rpx; */
   line-height: 1.6;
+  margin-bottom: 8rpx;
 }
 
 .reply-to {
@@ -259,125 +173,54 @@ const handleDelete = () => {
   word-break: break-word;
 }
 
-.comment-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.action-left {
-  display: flex;
-  gap: 32rpx;
-}
-
-.action-right {
-  display: flex;
-  gap: 16rpx;
-}
-
-.action-btn {
+/* 操作栏 */
+.comment-meta {
   display: flex;
   align-items: center;
-  gap: 8rpx;
-  padding: 8rpx 12rpx;
-  border-radius: 20rpx;
-  background: #f8f9fa;
-  transition: background-color 0.2s;
+  gap: 24rpx;
 }
 
-.action-btn:active {
-  background: #e9ecef;
-}
-
-.delete-btn {
-  background: #fff5f5;
-  color: #ff4757;
-}
-
-.delete-btn:active {
-  background: #ffe0e0;
-}
-
-.action-icon {
-  font-size: 24rpx;
-}
-
-.action-icon.liked {
-  color: #ff4757;
-}
-
-.action-text {
+.comment-time {
   font-size: 22rpx;
-  color: #666666;
+  color: #999999;
 }
 
-.delete-btn .action-text {
-  color: #ff4757;
+.comment-reply {
+  font-size: 22rpx;
+  color: #666;
 }
 
-.children-comments {
-  margin-top: 16rpx;
+.comment-reply:active {
+  color: #1890ff;
 }
 
-/* 移动端适配 */
-@media (max-width: 768px) {
-  .comment-item.level-2,
-  .comment-item.level-3 {
-    margin-left: 40rpx;
-  }
-
-  .user-info {
-    /* flex-direction: ; */
-    align-items: flex-start;
-    gap: 8rpx;
-  }
-
-  .action-left {
-    gap: 24rpx;
-  }
-}
-/* 新增：标题行左右布局与内联点赞样式 */
-.user-info-left {
-  display: flex;
-  align-items: center;
-  gap: 12rpx;
-}
-
-.user-info-right {
-  display: flex;
-  align-items: center;
-}
-
+/* 点赞区域 */
 .like-inline {
-  width: 30%;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0rpx 12rpx;
-  border-radius: 20rpx;
-  background: #f0f7ff;
+  gap: 16rpx;
+  margin-left: auto;
 }
 
 .like-icon {
   font-size: 24rpx;
-  color: #409eff;
-  margin-right: 10rpx;
+  color: #999;
+  padding: 4rpx 12rpx;
+  border-radius: 16rpx;
+  background: #f5f5f5;
 }
 
 .like-icon.liked {
   color: #ff4757;
 }
 
-/* 新增：评论时间与删除在次行右侧展示 */
-.comment-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 8rpx;
-}
-
 .delete-link {
   font-size: 22rpx;
   color: #ff4757;
+}
+
+/* 子评论 */
+.children-comments {
+  margin-top: 16rpx;
 }
 </style>

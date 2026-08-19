@@ -147,6 +147,58 @@ export function getEnvBaseUrl() {
 }
 
 /**
+ * 格式化时间为相对时间（如：刚刚、5分钟前、3天前）
+ * @param timeString ISO 8601 格式，如 "2025-10-23T19:46:19Z"
+ * @returns 格式化后的相对时间字符串
+ */
+export function formatRelativeTime(timeString: string): string {
+  if (!timeString)
+    return ''
+
+  let normalized = timeString.trim()
+  // iOS 兼容："yyyy-MM-dd HH:mm:ss" -> "yyyy/MM/dd HH:mm:ss"
+  if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}$/.test(normalized)) {
+    normalized = normalized.replace(/-/g, '/')
+  }
+
+  let date = new Date(normalized)
+  // 兜底：尝试 ISO 格式 "yyyy-MM-ddTHH:mm:ss"
+  if (Number.isNaN(date.getTime())) {
+    date = new Date(timeString.replace(' ', 'T'))
+  }
+  // 仍无法解析则返回原字符串
+  if (Number.isNaN(date.getTime()))
+    return timeString
+
+  const diff = Date.now() - date.getTime()
+  const minute = 60 * 1000
+  const hour = 60 * minute
+  const day = 24 * hour
+  const week = 7 * day
+  const month = 30 * day
+  const year = 365 * day
+
+  if (diff < minute)
+    return '刚刚'
+  if (diff < hour)
+    return `${Math.floor(diff / minute)}分钟前`
+  if (diff < day)
+    return `${Math.floor(diff / hour)}小时前`
+  if (diff < week)
+    return `${Math.floor(diff / day)}天前`
+  if (diff < month)
+    return `${Math.floor(diff / week)}周前`
+  if (diff < year)
+    return `${Math.floor(diff / month)}个月前`
+
+  // 超过1年显示具体日期
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+/**
  * 是否是双token模式
  */
 export const isDoubleTokenMode = import.meta.env.VITE_AUTH_MODE === 'double'

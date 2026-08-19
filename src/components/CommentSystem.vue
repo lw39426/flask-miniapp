@@ -2,18 +2,25 @@
   <view class="comment-system">
     <!-- 评论统计 -->
     <view v-if="statistics" class="comment-stats">
-      <text class="stats-title">评论: {{ statistics.total_comments }}条新评论</text>
+      <text class="stats-title">评论 {{ statistics.total_comments }} 条</text>
     </view>
+
     <!-- 排序筛选 -->
     <sar-dropdown v-if="!isProduct">
       <sar-dropdown-item :options="options1" model-value="1" />
       <sar-dropdown-item :options="options2" model-value="1" />
     </sar-dropdown>
+
     <!-- 评论列表 -->
     <view v-if="comments.length > 0" class="comment-list">
       <CommentItem
-        v-for="comment in comments" :key="comment.id" :comment="comment" :current-user="currentUser"
-        @reply="handleReply" @like="handleLike" @delete="handleDelete"
+        v-for="comment in comments"
+        :key="comment.id"
+        :comment="comment"
+        :current-user="currentUser"
+        @reply="handleReply"
+        @like="handleLike"
+        @delete="handleDelete"
       />
     </view>
 
@@ -21,13 +28,7 @@
     <view v-else-if="!loading" class="empty-comments">
       <text class="empty-text">{{ isProduct ? '商品评论暂未开通，敬请期待 ^_^' : '暂无评论，快来发表第一条评论吧~' }}</text>
     </view>
-    <!-- 未登录提示 -->
-    <view v-if="!currentUser && !currentUser?.id" class="login-prompt">
-      <text class="prompt-text">登录后可以发表评论...</text>
-      <button class="login-btn" @tap="goToLogin">
-        去登录
-      </button>
-    </view>
+
     <!-- 加载更多 -->
     <view v-if="pagination && pagination.has_next" class="load-more">
       <button class="load-more-btn" :disabled="loadingMore" @tap="loadMoreComments">
@@ -40,7 +41,7 @@
       <text class="loading-text">加载中...</text>
     </view>
 
-    <!-- 底部评论工具栏 -->
+    <!-- 底部评论工具栏（仅文章评论显示） -->
     <view v-if="!isProduct" class="comment-box" :style="{ bottom: `${keyboardHeight}px` }">
       <!-- 回复提示栏 -->
       <view v-if="replyTarget" class="reply-bar">
@@ -49,7 +50,7 @@
       </view>
 
       <view class="toolbar-content">
-        <!-- 左侧输入框 -->
+        <!-- 输入框 -->
         <view class="input-wrapper">
           <textarea
             v-model="commentContent"
@@ -68,26 +69,30 @@
           />
         </view>
 
-        <!-- 图标栏 -->
+        <!-- 图标栏（无内容时显示） -->
         <view v-if="!commentContent.trim()" class="icon-bar">
-          <view class="icon-item">
-            <view class="i-carbon-chat text-[30rpx] text-[#666]" />
-          </view>
           <view class="icon-item" @tap="emit('toggle-like')">
-            <view v-if="isLiked" class="i-carbon-favorite text-[30rpx] text-[#ff4141]" />
+            <view v-if="isLiked" class="i-carbon-favorite-filled text-[32rpx] text-[#ff4141]" />
             <view v-else class="i-carbon-favorite text-[30rpx] text-[#666]" />
-            <text class="icon-text">{{ likes || 0 }}</text>
           </view>
           <view class="icon-item" @tap="emit('share')">
             <view class="i-carbon-share text-[28rpx] text-[#666]" />
           </view>
         </view>
 
-        <!-- 发送按钮 -->
+        <!-- 发送按钮（有内容时显示） -->
         <button v-else class="send-btn" :disabled="submitting" @click="submitComment">
           {{ submitting ? '...' : '发送' }}
         </button>
       </view>
+    </view>
+
+    <!-- 未登录提示 -->
+    <view v-if="!currentUser && !isProduct" class="login-prompt">
+      <text class="prompt-text">登录后可以发表评论...</text>
+      <button class="login-btn" @tap="goToLogin">
+        去登录
+      </button>
     </view>
   </view>
 </template>
@@ -551,123 +556,20 @@ defineExpose({
 
 /* 评论统计 */
 .comment-stats {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   padding-bottom: 16rpx;
   border-bottom: 1rpx solid #f0f0f0;
+  margin-bottom: 16rpx;
 }
 
 .stats-title {
-  font-size: 32rpx;
+  font-size: 30rpx;
   font-weight: 600;
   color: #2c2c2c;
 }
 
-/* 评论表单 */
-.comment-form {
-  margin-bottom: 32rpx;
-  padding: 24rpx;
-  background: #f8f9fa;
-  border-radius: 12rpx;
-}
-
-.form-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 16rpx;
-}
-
-.user-avatar {
-  width: 60rpx;
-  height: 60rpx;
-  border-radius: 50%;
-  margin-right: 16rpx;
-}
-
-.form-title {
-  flex: 1;
-  font-size: 28rpx;
-  color: #2c2c2c;
-  font-weight: 500;
-}
-
-.cancel-reply {
-  font-size: 24rpx;
-  color: #007bff;
-  padding: 8rpx 16rpx;
-  background: #ffffff;
-  border-radius: 20rpx;
-}
-
-.comment-input {
-  min-height: 120rpx;
-  padding: 16rpx;
-  background: #ffffff;
-  border-radius: 8rpx;
-  font-size: 28rpx;
-  color: #2c2c2c;
-  border: 1rpx solid #e9ecef;
-  margin-bottom: 16rpx;
-}
-
-.form-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.char-count {
-  font-size: 24rpx;
-  color: #999999;
-}
-
-.submit-btn {
-  padding: 0rpx 32rpx;
-  margin: 0;
-  background: #007bff;
-  color: #ffffff;
-  border: none;
-  border-radius: 20rpx;
-  font-size: 26rpx;
-}
-
-.submit-btn.disabled {
-  background: #cccccc;
-  color: #999999;
-}
-
-/* 未登录提示 */
-.login-prompt {
-  display: flex;
-  justify-content: center;
-  gap: 32rpx;
-  align-items: center;
-  padding: 32rpx;
-  background: #f8f9fa;
-  border-radius: 12rpx;
-  margin-bottom: 32rpx;
-}
-
-.prompt-text {
-  font-size: 28rpx;
-  color: #666666;
-}
-
-.login-btn {
-  padding: 0 24rpx;
-  margin: 0;
-  display: inline-block;
-  background: #007bff;
-  color: #ffffff;
-  border: none;
-  border-radius: 20rpx;
-  font-size: 26rpx;
-}
-
 /* 评论列表 */
 .comment-list {
-  margin: 32rpx 0;
+  padding-bottom: 120rpx; /* 为底部工具栏留出空间 */
 }
 
 /* 空状态 */
@@ -688,12 +590,16 @@ defineExpose({
 }
 
 .load-more-btn {
-  padding: 16rpx 32rpx;
+  padding: 16rpx 48rpx;
   background: #f8f9fa;
   color: #666666;
   border: 1rpx solid #e9ecef;
   border-radius: 24rpx;
   font-size: 26rpx;
+}
+
+.load-more-btn[disabled] {
+  opacity: 0.6;
 }
 
 /* 加载状态 */
@@ -707,28 +613,34 @@ defineExpose({
   color: #999999;
 }
 
-.reply-popup {
-  padding: 24rpx 24rpx calc(24rpx + env(safe-area-inset-bottom));
-  background: #ffffff;
-}
-
-.reply-header {
+/* 未登录提示 */
+.login-prompt {
   display: flex;
+  justify-content: center;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16rpx;
+  gap: 24rpx;
+  padding: 24rpx;
+  margin-top: 32rpx;
+  background: #f8f9fa;
+  border-radius: 12rpx;
 }
 
-.reply-title {
-  font-size: 28rpx;
-  color: #2c2c2c;
-  font-weight: 500;
-}
-
-.reply-cancel {
+.prompt-text {
   font-size: 26rpx;
-  color: #007bff;
-  padding: 8rpx 12rpx;
+  color: #666666;
+}
+
+.login-btn {
+  padding: 0 24rpx;
+  margin: 0;
+  display: inline-block;
+  background: #ff6b81;
+  color: #ffffff;
+  border: none;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  height: 56rpx;
+  line-height: 56rpx;
 }
 
 /* 底部工具栏容器 */
@@ -740,7 +652,7 @@ defineExpose({
   z-index: 99;
   background-color: #ffffff;
   box-shadow: 0 -2rpx 10rpx rgba(0, 0, 0, 0.05);
-  transition: bottom 0.1s ease-out;
+  transition: bottom 0.15s ease-out;
   padding-bottom: env(safe-area-inset-bottom);
 }
 
@@ -760,13 +672,13 @@ defineExpose({
 
 .cancel-reply-btn {
   font-size: 24rpx;
-  color: #007bff;
+  color: #1890ff;
 }
 
 .toolbar-content {
   display: flex;
   align-items: center;
-  padding: 20rpx 30rpx;
+  padding: 16rpx 30rpx;
   box-sizing: border-box;
 }
 
@@ -774,10 +686,9 @@ defineExpose({
   flex: 1;
   background-color: #f5f5f5;
   border-radius: 40rpx;
-  padding: 16rpx 24rpx;
+  padding: 14rpx 24rpx;
   min-height: 40rpx;
   display: flex;
-  overflow: hidden;
   align-items: center;
 }
 
@@ -801,18 +712,10 @@ defineExpose({
 .icon-item {
   display: flex;
   align-items: center;
-  gap: 4rpx;
+  padding: 8rpx;
 }
 
-.icon-num {
-  font-size: 36rpx;
-}
-
-.icon-text {
-  font-size: 24rpx;
-  color: #666;
-}
-
+/* 发送按钮 */
 .send-btn {
   margin-left: 20rpx;
   background-color: #ff6b81;
@@ -828,9 +731,5 @@ defineExpose({
 .send-btn[disabled] {
   background-color: #ffb5c1;
   opacity: 0.8;
-}
-
-.comment-list {
-  padding-bottom: 120rpx; /* 为底部工具栏留出空间 */
 }
 </style>
