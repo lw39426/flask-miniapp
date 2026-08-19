@@ -116,3 +116,75 @@ const handleClick = () => {
 - onLoad、onShow、onReady、onHide、onUnload
 - 组件生命周期遵循 Vue3 规范
 - 注意页面栈和导航管理
+
+## 架构职责分离规范 (Architecture Responsibility Separation)
+为了保持代码的整洁和可维护性，项目遵循以下职责分离原则：
+
+### 1. HTTP 拦截器层 (`src/http/`)
+- **职责**：统一处理请求/响应拦截。
+- **功能**：
+  - 自动注入 `Authorization` Token。
+  - **统一状态码校验**：校验 `code === 200` 或 `code === 0`，非成功状态直接 `throw Error`。
+  - **通用错误提示**：根据业务码弹出 Toast 提示（如 429 频繁请求）,同时根据不同环境做提示处理，避免正式环境透出后端业务提示。
+  - **Token 刷新**：实现无感刷新 Token 逻辑。
+
+### 2. API 接口层 (`src/api/`)
+- **职责**：定义后端接口映射，充当“数据翻译官”。
+- **规范**：
+  - **数据解包**：使用 `.then(res => res.data)` 将后端包装结构拆解，只返回核心业务数据。
+  - **禁止重复校验**：不要在 API 层重复写 `if (res.code === 200)`，拦截器已处理。
+  - **纯净性**：不包含 UI 交互逻辑（如 Loading、Toast）。
+  - **类型安全** ：在 API 层定义 Promise<xxx> 而不是 Promise<ApiResponse<xxx>> ，可以让后续的 TypeScript 类型推导变得非常直观。
+
+### 3. Store 状态层 (`src/store/`)
+- **职责**：管理全局/模块化状态及核心业务逻辑。
+- **规范**：
+  - **状态持久化**：如用户信息、Token、购物车数据。
+  - **逻辑封装**：封装复杂的业务流程（如登录后获取用户信息、清除本地缓存等）。
+  - **数据源**：从 API 层获取“干净”的数据，不关心 HTTP 响应结构。
+
+### 4. 页面/组件层 (`src/pages/`, `src/components/`)
+- **职责**：负责 UI 渲染和用户交互。
+- **规范**：
+  - **调用链**：优先调用 Store actions，简单场景可直接调用 API。
+  - **交互反馈**：负责页面级的 Loading 状态控制（如下拉刷新）和特定的用户提示。
+  - **数据展示**：将 Store 或 API 返回的数据映射到模板。
+
+## UI/UX 交互与开发规范
+为了提升用户体验并减少 UI 逻辑冲突，需遵循以下开发规范：
+
+### 1. Loading 与 Toast 冲突处理
+- **原则**：**先关闭 Loading，再显示 Toast**。
+- **原因**：在 UniApp 中，`uni.hideLoading()` 会意外关闭正在显示的 `uni.showToast()`。
+- **代码示例**：
+  ```typescript
+  // 错误做法：finally 中 hideLoading 会关闭 catch 中的 toast
+  try { ... } catch { uni.showToast(...) } finally { uni.hideLoading() }
+
+  // 正确做法：
+  try {
+    uni.showLoading()
+    await action()
+    uni.hideLoading()
+    uni.showToast({ title: '成功' })
+  } catch (e) {
+    uni.hideLoading()
+    uni.showToast({ title: '失败', icon: 'error' })
+  }
+  ```
+
+### 2. 骨架图 (Skeleton) 使用规范
+- **加载时机**：使用 `isFirstLoad` 或 `loading && data.length === 0` 作为显示条件。
+- **显示策略**：骨架图仅在页面**首次加载**或**重置刷新**且无旧数据时显示；分页加载更多时应使用 `load-more` 组件而非骨架图。
+- **复用建议**：复杂的商品卡片等小单元应抽离为 `components/skeleton/` 下的独立组件。
+
+### 3. 平台适配规范
+- **条件编译**：严格使用 `#ifdef` 处理跨平台差异，尤其是第三方登录（微信 vs 支付宝）和特定 API（如 `getPhoneNumber`）。
+- **OAuth 登录**：登录页面应显式区分登录方式（如“微信登录”按钮、“支付宝登录”按钮），并根据 `uni.getProvider` 动态显示。
+
+### 4. 性能优化
+- **图片加载**：优先使用 `mode="aspectFill"` 并开启 `lazy-load`。
+- **页面栈**：登录成功后，根据页面栈深度决定使用 `uni.navigateBack()` 还是 `uni.switchTab()`。
+
+---
+遵循以上规范，确保“底层处理协议，中层处理数据，顶层处理展示”，避免代码冗余和逻辑混乱。
