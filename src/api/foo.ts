@@ -184,14 +184,18 @@ export const uploadFile = async (filePath: string, name: string = 'file') => {
       filePath,
       name: 'file',
       success: (res) => {
-        console.log('小程序上传成功:', res)
-        const data = JSON.parse(res.data)
+        console.log('小程序上传响应 statusCode:', res.statusCode)
+        // 检查 HTTP 状态码，非 2xx 视为失败
+        if (res.statusCode < 200 || res.statusCode >= 300) {
+          reject(new Error(`上传失败: HTTP ${res.statusCode}`))
+          return
+        }
         try {
-          console.log('小程序上传成功111:', data)
+          const data = JSON.parse(res.data)
           resolve(data)
         }
         catch (error) {
-          resolve(data)
+          reject(new Error('服务器响应解析失败'))
         }
       },
       fail: (error) => {

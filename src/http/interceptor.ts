@@ -40,7 +40,12 @@ const httpInterceptor = {
 
       // 非H5、小程序端正常拼接
       // #ifndef H5
-      options.url = baseUrl + apiPrefix + options.url
+      if (options.url.includes('upload-file')) {
+        options.url = baseUrl + options.url
+      }
+      else {
+        options.url = baseUrl + apiPrefix + options.url
+      }
       // #endif
       // TIPS: 如果需要对接多个后端服务，也可以在这里处理，拼接成所需要的地址
     }
