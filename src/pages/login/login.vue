@@ -128,6 +128,7 @@
 
         <!-- 切换模式 -->
         <view class="switch-mode">
+          <text @click="_goToAgreement">22222</text>
           <text class="extra-link" @tap="forgotPassword">忘记密码?</text>
           <view class="mode-switch-wrap">
             <text class="switch-text">
@@ -139,40 +140,6 @@
           </view>
         </view>
       </view>
-    </view>
-
-    <!-- 快捷登录 -->
-    <view class="extra-links">
-      <sar-button
-        v-if="hasWechatProvider"
-        inline
-        root-style="margin: 0 10rpx"
-        background="#2dcca7"
-        @tap="handleWxLogin"
-      >
-        微信登录
-      </sar-button>
-      <sar-button
-        v-if="hasAlipayProvider"
-        inline
-        root-style="margin: 0 10rpx"
-        background="#1677ff"
-        @tap="handleAlipayLogin"
-      >
-        支付宝登录
-      </sar-button>
-      <!-- #ifdef MP-WEIXIN -->
-      <sar-button
-        inline
-        root-style="margin-left: 70rpx"
-        background="#45d6a7"
-        color="#fff"
-        open-type="getPhoneNumber"
-        @getphonenumber="handleWechatPhoneLogin"
-      >
-        手机号登录
-      </sar-button>
-    <!-- #endif -->
     </view>
   </view>
 </template>
@@ -199,11 +166,11 @@ const loginType = ref('password')
 
 // 表单数据
 const form = reactive({
-  username: 'testadmin',
+  username: 'liwanwan',
   phone: '13111111111',
   phonePwd: '111111',
   code: '1',
-  password: '123456',
+  password: '11111',
   captcha: '1', // 用户输入的文本
   captcha_key: '' // 后端给的 key
 })
@@ -298,7 +265,7 @@ const handleSubmit = async () => {
       }, 1000)
     }
   }
-  catch (error) {
+  catch (error: any) {
     console.log('账号密码登录失败:', error)
     uni.showToast({
       title: error?.message || '登录失败，请重试',
@@ -355,7 +322,7 @@ const handlePhoneSubmit = async () => {
       }, 1500)
     }
   }
-  catch (error) {
+  catch (error: any) {
     // 统一处理登录失败
     uni.showToast({
       title: error?.message || '登录失败，请重试',
@@ -373,12 +340,15 @@ const goToRegister = () => {
 }
 
 // 跳转到服务协议
-const goToAgreement = () => {
+const _goToAgreement = () => {
   uni.showToast({ title: '跳转服务协议', icon: 'none' })
+  uni.navigateTo({
+    url: '/pages/login/login-better'
+  })
 }
 
 // 跳转到隐私政策
-const goToPrivacy = () => {
+const _goToPrivacy = () => {
   uni.showToast({ title: '跳转隐私政策', icon: 'none' })
 }
 
@@ -401,9 +371,6 @@ const getAvailableOAuthProviders = () => new Promise<string[]>((resolve) => {
 })
 
 const providers = ref<string[]>([])
-const hasWechatProvider = computed(() => providers.value.includes('weixin'))
-const hasAlipayProvider = computed(() => providers.value.includes('alipay'))
-
 /**
  * 微信快捷登录
  */
@@ -430,33 +397,10 @@ const handleWxLogin = async () => {
 }
 
 /**
- * 支付宝快捷登录
- */
-const handleAlipayLogin = async () => {
-  try {
-    const res = await tokenStore.alipayLogin()
-    if (res) {
-      setTimeout(() => {
-        const pages = getCurrentPages()
-        if (pages.length > 1) {
-          uni.navigateBack()
-        }
-        else {
-          uni.switchTab({ url: '/pages/index/index' })
-        }
-      }, 1000)
-    }
-  }
-  catch (error: any) {
-    // 错误已经在 store 中提示过，这里不需要重复提示
-  }
-}
-
-/**
  * 处理微信手机号授权登录
  * @param {object} e - 事件对象
  */
-const handleWechatPhoneLogin = async (e) => {
+const handleWechatPhoneLogin = async (e: any) => {
   // e.detail.errMsg === 'getPhoneNumber:ok' 表示用户同意授权
   // e.detail.errMsg === 'getPhoneNumber:fail user deny' 表示用户拒绝授权
   console.log(e)
