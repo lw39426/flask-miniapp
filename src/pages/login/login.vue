@@ -128,7 +128,6 @@
 
         <!-- 切换模式 -->
         <view class="switch-mode">
-          <text @click="_goToAgreement">22222</text>
           <text class="extra-link" @tap="forgotPassword">忘记密码?</text>
           <view class="mode-switch-wrap">
             <text class="switch-text">
@@ -140,6 +139,31 @@
           </view>
         </view>
       </view>
+    </view>
+
+    <!-- 快捷登录 -->
+    <view class="extra-links">
+      <!-- <view class="i-carbon-logo-wechat text-4xl text-green" /> -->
+      <sar-button
+        inline
+        root-style="margin-left: 10rpx"
+        background="#2dcca7"
+        @tap="quickLogin"
+      >
+        快捷登录
+      </sar-button>
+      <!-- #ifdef MP-WEIXIN -->
+      <sar-button
+        inline
+        root-style="margin-left: 70rpx"
+        background="#45d6a7"
+        color="#fff"
+        open-type="getPhoneNumber"
+        @getphonenumber="handleWechatPhoneLogin"
+      >
+        手机号登录
+      </sar-button>
+    <!-- #endif -->
     </view>
   </view>
 </template>
@@ -170,7 +194,7 @@ const form = reactive({
   phone: '13111111111',
   phonePwd: '111111',
   code: '1',
-  password: '11111',
+  password: '123123',
   captcha: '1', // 用户输入的文本
   captcha_key: '' // 后端给的 key
 })
@@ -265,12 +289,11 @@ const handleSubmit = async () => {
       }, 1000)
     }
   }
-  catch (error: any) {
-    console.log('账号密码登录失败:', error)
-    uni.showToast({
-      title: error?.message || '登录失败，请重试',
-      icon: 'error',
-      duration: 2500
+  catch (error) {
+    // 统一处理登录失败
+    toast(error?.message || '登录失败，请重试', {
+      type: 'fail',
+      timeout: 2500
     })
   }
 }
@@ -303,7 +326,6 @@ const handlePhoneSubmit = async () => {
     }
 
     const res = await tokenStore.loginByPhone(phoneLoginForm)
-    console.log('手机号登录结果:', res)
     if (res) {
       uni.showToast({
         title: '登录成功',
@@ -322,7 +344,7 @@ const handlePhoneSubmit = async () => {
       }, 1500)
     }
   }
-  catch (error: any) {
+  catch (error) {
     // 统一处理登录失败
     uni.showToast({
       title: error?.message || '登录失败，请重试',
@@ -340,15 +362,12 @@ const goToRegister = () => {
 }
 
 // 跳转到服务协议
-const _goToAgreement = () => {
+const goToAgreement = () => {
   uni.showToast({ title: '跳转服务协议', icon: 'none' })
-  uni.navigateTo({
-    url: '/pages/login/login-better'
-  })
 }
 
 // 跳转到隐私政策
-const _goToPrivacy = () => {
+const goToPrivacy = () => {
   uni.showToast({ title: '跳转隐私政策', icon: 'none' })
 }
 
@@ -370,29 +389,94 @@ const getAvailableOAuthProviders = () => new Promise<string[]>((resolve) => {
   })
 })
 
-const providers = ref<string[]>([])
 /**
- * 微信快捷登录
+ * 调用原生 OAuth 登录并通过后端换取 token
+ * 注意：当前通过 tokenStore.login 统一入口传递 { type: 'oauth', provider, code, iv, encryptedData }
+ * 如果后端/Store需要改为专门接口，可在此函数中替换为你的 API 调用。
  */
-const handleWxLogin = async () => {
+const doNativeOAuth = async (provider: 'weixin' | 'alipay' | any) => {
+  // 1. 原生登录，获取临时 code
+  const loginRes = await new Promise<any>((resolve, reject) => {
+    uni.login({
+      provider,
+      success: resolve,
+      fail: reject
+    })
+  })
+  console.log('wx原生登录结果:', loginRes)
+  const code = loginRes?.code
+  if (!code)
+    throw new Error('未获取到登录凭证 code')
+
+  // 2.（可选）获取用户信息（部分后端需要 iv、encryptedData）
+  let iv: string | undefined
+  let encryptedData: string | undefined
   try {
-    const res = await tokenStore.wxLogin()
-    console.log('微信快捷登录结果:', res)
-    if (res) {
-      setTimeout(() => {
-        const pages = getCurrentPages()
-        console.log('pages: ', pages)
-        if (pages.length > 1) {
-          uni.navigateBack()
-        }
-        else {
-          uni.switchTab({ url: '/pages/index/index' })
-        }
-      }, 1000)
+    const userInfoRes = await new Promise<any>((resolve, reject) => {
+      uni.getUserProfile({
+        provider,
+        desc: '用于完善会员资料',
+        success: resolve,
+        fail: reject
+      })
+    })
+    console.log('wx原生获取用户信息结果:', userInfoRes)
+    iv = userInfoRes?.iv
+    encryptedData = userInfoRes?.encryptedData
+  }
+  catch {
+    // 未授权用户信息不影响登录换取 token（依后端要求）
+  }
+
+  // 3. 调用 tokenStore 统一登录入口（假定支持 type='oauth'）
+  const ok = await (tokenStore as any).login({
+    type: 'oauth',
+    provider,
+    code,
+    iv,
+    encryptedData
+  })
+  if (!ok)
+    throw new Error('登录失败，后端未返回有效凭证')
+  return true
+}
+
+/**
+ * 快捷登录（原生微信/支付宝）
+ */
+const quickLogin = async () => {
+  try {
+    uni.showLoading({ title: '登录中...' })
+    const providers = await getAvailableOAuthProviders()
+    const provider = providers.includes('weixin')
+      ? 'weixin'
+      : (providers.includes('alipay') ? 'alipay' : '')
+    if (!provider) {
+      uni.hideLoading()
+      uni.showToast({ title: '当前环境不支持原生快捷登录', icon: 'none' })
+      return
     }
+    console.log('调用原生 OAuth 登录:', providers)
+
+    await doNativeOAuth(provider as any)
+    uni.hideLoading()
+    uni.showToast({ title: '登录成功', icon: 'success' })
+    // setTimeout(() => {
+    //   const pages = getCurrentPages()
+    //   if (pages.length > 1) {
+    //     uni.navigateBack()
+    //   } else {
+    //     uni.switchTab({ url: '/pages/index/index' })
+    //   }
+    // }, 1000)
   }
   catch (error: any) {
-    // 错误已经在 store 中提示过，这里不需要重复提示
+    uni.hideLoading()
+    uni.showToast({
+      title: error?.message || '登录失败，请重试',
+      icon: 'error',
+      duration: 2500
+    })
   }
 }
 
@@ -400,7 +484,7 @@ const handleWxLogin = async () => {
  * 处理微信手机号授权登录
  * @param {object} e - 事件对象
  */
-const handleWechatPhoneLogin = async (e: any) => {
+const handleWechatPhoneLogin = async (e) => {
   // e.detail.errMsg === 'getPhoneNumber:ok' 表示用户同意授权
   // e.detail.errMsg === 'getPhoneNumber:fail user deny' 表示用户拒绝授权
   console.log(e)
@@ -457,14 +541,12 @@ const handleWechatPhoneLogin = async (e: any) => {
 
 // 获取验证码
 const getCaptcha = async () => {
-  const data = await getCode()
-  console.log('获取验证码返回:', data)
-  captchaImage.value = data?.image // base64 字符串
-  form.captcha_key = data?.captcha_key // 隐藏字段，随表单回传
+  const { data } = await getCode()
+  captchaImage.value = data.image // base64 字符串
+  form.captcha_key = data.captcha_key // 隐藏字段，随表单回传
 }
-onLoad(async () => {
+onLoad(() => {
   getCaptcha()
-  providers.value = await getAvailableOAuthProviders()
 })
 </script>
 
