@@ -173,7 +173,7 @@ const goToMore = () => showAppModal({ title: '提示', content: '更多功能正
 const goAlert = (msg: string) => showAppModal({ title: '傻逼一个嘻嘻嘻', content: msg })
 /** 跳转至商品详情 */
 const goToProductDetail = (product: { code: string }) => uni.navigateTo({ url: `/pages/product/detail?code=${product.code}` })
-const goToArticle = (art: Article) => uni.navigateTo({ url: `/pages/article/detail?id=${art.id}` })
+const goToArticle = (art: Article) => uni.navigateTo({ url: `/pages/article/detail?article_code=${art.article_code}` })
 /** 跳转到更多文章页面 */
 const goToMoreArticles = () => uni.navigateTo({ url: '/pages/article/list' })
 /** 格式化日期 */
