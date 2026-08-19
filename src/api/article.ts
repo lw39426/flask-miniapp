@@ -40,18 +40,18 @@ export function getArticleList(params: ArticleListParams = {}): Promise<ApiRespo
 
 /**
  * 获取文章详情
- * GET /api/v1/article/<article_id>
+ * GET /api/v1/article/<article_code>
  */
-export function getArticleDetail(articleId: number): Promise<ApiResponse<ArticleDetail>> {
-  return http.get<ApiResponse<ArticleDetail>>(`/article/${articleId}`)
+export function getArticleDetail(articleCode: string): Promise<ApiResponse<ArticleDetail>> {
+  return http.get<ApiResponse<ArticleDetail>>(`/article/${articleCode}`)
 }
 
 /**
  * 获取相关文章
- * GET /api/v1/article/<article_id>/related
+ * GET /api/v1/article/<article_code>/related
  */
-export function getRelatedArticles(articleId: number, pageSize: number = 5): Promise<ApiResponse<Article[]>> {
-  return http.get<ApiResponse<Article[]>>(`/article/${articleId}/related`, { pageSize })
+export function getRelatedArticles(articleCode: string, pageSize: number = 5): Promise<ApiResponse<Article[]>> {
+  return http.get<ApiResponse<Article[]>>(`/article/${articleCode}/related`, { pageSize })
 }
 
 /**

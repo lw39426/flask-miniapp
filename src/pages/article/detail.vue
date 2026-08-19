@@ -18,7 +18,7 @@
         <view class="mb-[20rpx] flex flex-row items-start justify-between gap-[20rpx]">
           <text id="article-title" class="article-title">{{ article.title }}</text>
           <view class="favorite-btn" @tap="toggleFavorite">
-            <view :class="isFavorited ? 'i-carbon-star-filled text-[#f59e0b]' : 'i-carbon-star text-[#999]'" class="text-[44rpx]" />
+            <view :class="isFavorited ? 'i-carbon-star-filled text-[#f59e0b]' : 'i-carbon-star text-[#999]'" class="text-[38rpx]" />
           </view>
         </view>
 
@@ -95,7 +95,7 @@
       <view class="comment-section">
         <CommentSystem
           ref="commentRef"
-          :article-id="articleId!"
+          :article-id="articleId"
           :current-user="currentUser"
           :likes="article?.likes"
           :is-liked="isLiked"
@@ -149,7 +149,8 @@ const relatedArticles = ref<Article[]>([]) // 相关推荐文章列表
 const loading = ref(false)
 const isLiked = ref(false)
 const isFavorited = ref(false) // 收藏状态
-const articleId = ref<number>()
+const articleCode = ref<string>('')
+const articleId = ref<number>() // 数字id，用于评论等仍需id的接口
 const commentStats = ref<CommentStatistics>()
 const commentRef = ref<any>()
 const navTitle = ref('文章详情') // 导航栏标题
@@ -263,7 +264,7 @@ const updateNavTitle = () => {
 const loadRelatedArticles = async () => {
   try {
     // 先注释该方法
-    // const res = await getRelatedArticles(articleId.value!, 3)
+    // const res = await getRelatedArticles(articleCode.value, 3)
     relatedArticles.value = []
   }
   catch (error) {
@@ -272,12 +273,14 @@ const loadRelatedArticles = async () => {
 }
 // 加载文章详情
 const loadArticleDetail = async () => {
-  if (!articleId.value)
+  if (!articleCode.value)
     return
 
   try {
     loading.value = true
-    const res = await getArticleDetail(articleId.value)
+    const res = await getArticleDetail(articleCode.value)
+    // 保存数字id，供评论等仍需id的接口使用
+    articleId.value = res.data?.id
     // 扩展文章数据，添加点赞数
     article.value = {
       ...res.data,
@@ -318,7 +321,7 @@ const goBack = () => {
 // 跳转指定文章详情
 const goToArticle = (targetArticle: Article) => {
   uni.navigateTo({
-    url: `/pages/article/detail?id=${targetArticle.id}`
+    url: `/pages/article/detail?article_code=${targetArticle.article_code}`
   })
 }
 
@@ -351,13 +354,13 @@ const shareArticle = () => {
 
 // 检查收藏状态
 const checkFavoriteStatus = async () => {
-  if (!articleId.value || !tokenStore.hasLogin)
+  if (!articleCode.value || !tokenStore.hasLogin)
     return
 
   try {
     const res = await checkFavorite({
       item_type: FavoriteType.ARTICLE,
-      item_id: articleId.value
+      item_id: articleCode.value
     })
     isFavorited.value = res.data.is_favorited
   }
@@ -368,7 +371,7 @@ const checkFavoriteStatus = async () => {
 
 // 切换收藏状态
 const toggleFavorite = async () => {
-  if (!articleId.value)
+  if (!articleCode.value)
     return
 
   // 检查登录状态
@@ -391,7 +394,7 @@ const toggleFavorite = async () => {
   try {
     const res = await toggleFavoriteApi({
       item_type: FavoriteType.ARTICLE,
-      item_id: articleId.value
+      item_id: articleCode.value
     })
 
     isFavorited.value = res.data.is_favorited
@@ -404,7 +407,7 @@ const toggleFavorite = async () => {
     // 触发全局收藏状态变化事件
     uni.$emit('favoriteChanged', {
       type: 'article',
-      id: articleId.value,
+      id: articleCode.value,
       is_favorited: res.data.is_favorited
     })
   }
@@ -421,10 +424,10 @@ const toggleFavorite = async () => {
 const updateCommentStats = (stats: CommentStatistics) => {
   commentStats.value = stats
 }
-// 页面参数获取文章Id
+// 页面参数获取文章code
 const getPageParams = (options: any) => {
-  if (options && options.id) {
-    articleId.value = Number.parseInt(options.id)
+  if (options && options.article_code) {
+    articleCode.value = options.article_code
   }
 }
 

@@ -76,6 +76,7 @@ export interface Category {
 // 文章对象（文档 Article.to_dict()）
 export interface Article {
   id: number
+  article_code: string
   title: string
   content: string
   image: string
